@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">PriceOn</string>
+    <string name="log_in">Iniciar sesión</string>
+    <string name="register">Registrarse</string>
+    <string name="enter_without_registering">Usar sin registrarse</string>
+    <string name="app_logo">App Logo</string>
 </resources>

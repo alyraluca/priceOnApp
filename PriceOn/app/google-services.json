@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "445835943389",
+    "project_id": "precion-app",
+    "storage_bucket": "precion-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:445835943389:android:0e15757861f3b5e6a72a34",
+        "android_client_info": {
+          "package_name": "com.example.myapplication3.priceon"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAY_CBulZCiZehP6raxhF7f5SmplkY7wfc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
