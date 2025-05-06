@@ -6,4 +6,7 @@
     </style>
 
     <style name="Theme.PriceOn" parent="Base.Theme.PriceOn" />
+    <style name="Widget.App.BottomNavigationView" parent="Widget.MaterialComponents.BottomNavigationView">
+        <item name="itemIconSize">50dp</item>
+    </style>
 </resources>

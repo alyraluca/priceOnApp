@@ -17,7 +17,7 @@ import com.example.myapplication3.priceon.R;
 public class MainActivity extends AppCompatActivity {
     private Button loginButton;
     private Button registerButton;
-    //private TextView guestLoginTextView;
+    private TextView guestLoginTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,23 +26,31 @@ public class MainActivity extends AppCompatActivity {
 
         loginButton = findViewById(R.id.loginButton);
         registerButton = findViewById(R.id.registerButton);
-        //guestLoginTextView = findViewById(R.id.guestLoginTextView);
+        guestLoginTextView = findViewById(R.id.guestLoginTextView);
 
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Navigate to the login activity
                 startActivity(new Intent(MainActivity.this, LoginActivity.class));
+                finish();
             }
         });
 
         registerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Navigate to the registration activity
                 startActivity(new Intent(MainActivity.this, RegisterActivity.class));
+                finish();
             }
         });
+        guestLoginTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(MainActivity.this, HomeActivity.class));
+                finish();
+            }
+        });
+
 
 
     }
