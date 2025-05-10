@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.myapplication3.priceon.R;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -16,9 +17,11 @@ import java.util.Objects;
 public class RegisterActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
 
-    EditText nameEditText, emailEditText, passwordEditText, confirmPasswordEditText;
-    Button registerButton;
-    TextView loginLinkTextView;
+    private EditText nameEditText, emailEditText, passwordEditText, confirmPasswordEditText;
+    private Button registerButton;
+    private TextView loginLinkTextView;
+    private TextView guestLoginTextView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +38,7 @@ public class RegisterActivity extends AppCompatActivity {
         confirmPasswordEditText = findViewById(R.id.confirmPasswordEditText);
         registerButton = findViewById(R.id.registerButton);
         loginLinkTextView = findViewById(R.id.loginLinkTextView);
+        guestLoginTextView = findViewById(R.id.guestLoginTextView);
 
         //Botón registrarse
         registerButton.setOnClickListener(v -> registerUser());
@@ -43,6 +47,14 @@ public class RegisterActivity extends AppCompatActivity {
         loginLinkTextView.setOnClickListener(v -> {
             startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
             finish();
+        });
+
+        guestLoginTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(RegisterActivity.this, HomeActivity.class));
+                finish();
+            }
         });
     }
 

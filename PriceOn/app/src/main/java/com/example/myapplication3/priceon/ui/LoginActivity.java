@@ -7,6 +7,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -22,6 +23,7 @@ public class LoginActivity extends AppCompatActivity {
     private TextView registerLinkTextView;
 
     private FirebaseAuth mAuth;
+    private TextView guestLoginTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +37,8 @@ public class LoginActivity extends AppCompatActivity {
         passwordEditText = findViewById(R.id.passwordEditText);
         loginButton = findViewById(R.id.loginButton);
         registerLinkTextView = findViewById(R.id.registerLinkTextView);
+        guestLoginTextView = findViewById(R.id.guestLoginTextView);
+
 
         //Botón de log in
         loginButton.setOnClickListener(v -> loginUser());
@@ -43,6 +47,14 @@ public class LoginActivity extends AppCompatActivity {
         registerLinkTextView.setOnClickListener(v -> {
             startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
             finish();
+        });
+
+        guestLoginTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(LoginActivity.this, HomeActivity.class));
+                finish();
+            }
         });
 
     }
@@ -68,4 +80,6 @@ public class LoginActivity extends AppCompatActivity {
                     }
                 });
     }
+
+
 }

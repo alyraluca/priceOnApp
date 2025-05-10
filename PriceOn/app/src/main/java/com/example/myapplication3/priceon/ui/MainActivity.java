@@ -43,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
+
         guestLoginTextView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

@@ -162,7 +162,7 @@
                         <ImageView
                             android:layout_width="60dp"
                             android:layout_height="60dp"
-                            android:src="@drawable/dia"
+                            android:src="@drawable/dia_logo"
                             android:contentDescription="@string/supermarket_icon_description"/>
                         <TextView
                             android:layout_width="wrap_content"
@@ -208,6 +208,8 @@
         </LinearLayout>
 
     </ScrollView>
+
+
     <!-- Barra de Navegación Inferior -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigationBar"
