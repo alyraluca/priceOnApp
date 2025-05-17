@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+    <!-- Optional: Title for Supermarkets section -->
+<!--    <TextView-->
+<!--        android:id="@+id/supermarketsSectionTitleTextView"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="@string/supermarkets_title"-->
+<!--        android:textSize="18sp"-->
+<!--        android:textStyle="bold"-->
+<!--        android:layout_marginBottom="8dp"-->
+<!--        android:paddingStart="16dp"-->
+<!--        android:paddingEnd="16dp"/>-->
+
+<!--    <HorizontalScrollView-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:scrollbars="none"-->
+<!--        android:paddingStart="16dp"-->
+<!--        android:paddingEnd="16dp"-->
+<!--        android:clipToPadding="false"> &lt;!&ndash; Allows content in padding to be seen during scroll &ndash;&gt;-->
+
+<!--        <LinearLayout-->
+<!--            android:id="@+id/supermarketsContainer"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:orientation="horizontal">-->
+
+<!--            &lt;!&ndash; Example of a single supermarket item layout (you'll inflate these programmatically) &ndash;&gt;-->
+<!--            &lt;!&ndash; This is just for visualization in the design preview &ndash;&gt;-->
+<!--            <LinearLayout-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:orientation="vertical"-->
+<!--                android:gravity="center"-->
+<!--                android:padding="8dp"-->
+<!--                android:layout_marginEnd="8dp">-->
+<!--                <ImageView-->
+<!--                    android:layout_width="60dp"-->
+<!--                    android:layout_height="60dp"-->
+<!--                    android:src="@drawable/mercadona_logo" /> &lt;!&ndash; Placeholder &ndash;&gt;-->
+<!--                android:contentDescription="@string/supermarket_icon_description"/>-->
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="Mercadona"-->
+<!--                    android:textSize="12sp"-->
+<!--                    android:layout_marginTop="4dp"/>-->
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="1.2 km"-->
+<!--                    android:textSize="10sp"-->
+<!--                    android:textColor="@android:color/darker_gray"/>-->
+<!--            </LinearLayout>-->
+
+<!--            &lt;!&ndash; Add more placeholder supermarket items here for preview if needed &ndash;&gt;-->
+<!--            <LinearLayout-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:orientation="vertical"-->
+<!--                android:gravity="center"-->
+<!--                android:padding="8dp"-->
+<!--                android:layout_marginEnd="8dp">-->
+<!--                <ImageView-->
+<!--                    android:layout_width="60dp"-->
+<!--                    android:layout_height="60dp"-->
+<!--                    android:src="@drawable/alcampo" /> &lt;!&ndash; Placeholder &ndash;&gt;-->
+<!--                android:contentDescription="@string/supermarket_icon_description"/>-->
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="Alcampo"-->
+<!--                    android:textSize="12sp"-->
+<!--                    android:layout_marginTop="4dp"/>-->
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="0.8 km"-->
+<!--                    android:textSize="10sp"-->
+<!--                    android:textColor="@android:color/darker_gray"/>-->
+<!--            </LinearLayout>-->
+
+<!--        </LinearLayout>-->
+<!--    </HorizontalScrollView>-->
+</LinearLayout>

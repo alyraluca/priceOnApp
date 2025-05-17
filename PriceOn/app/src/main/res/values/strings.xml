@@ -15,4 +15,5 @@
     <string name="search_history">Historial de búsqueda</string>
     <string name="supermarkets_title">Supermercados</string>
     <string name="supermarket_icon_description">Supermarket logo</string>
+    <string name="product_image_description">Place holder product name</string>
 </resources>
