@@ -1,18 +1,23 @@
 package com.example.myapplication3.priceon.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.MenuItem;
 import android.widget.EditText;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.myapplication3.priceon.BarcodeScannerActivity;
 import com.example.myapplication3.priceon.R;
 import com.example.myapplication3.priceon.data.model.Product;
 import com.example.myapplication3.priceon.ui.adapter.ProductAdapter;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.navigation.NavigationBarView;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
@@ -36,6 +41,22 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
         bottomNavigationView = findViewById(R.id.bottomNavigationBar);
+
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.navigation_home) {
+                // Acción para home
+                return true;
+            } else if (id == R.id.navigation_scan) {
+                // Acción para scan
+                return true;
+            } else if (id == R.id.navigation_favorites) {
+                // Acción para favoritos
+                return true;
+            }
+            return false;
+        });
+
 
         searchEditText = findViewById(R.id.searchEditText);
         recyclerView = findViewById(R.id.contentRecyclerView);

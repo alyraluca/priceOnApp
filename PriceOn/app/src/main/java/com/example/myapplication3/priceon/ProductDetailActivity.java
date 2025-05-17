@@ -1,5 +1,6 @@
 package com.example.myapplication3.priceon;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -7,6 +8,8 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import com.example.myapplication3.priceon.ui.HomeActivity;
 import com.github.mikephil.charting.charts.LineChart;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -18,6 +21,7 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.ValueFormatter;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -35,6 +39,7 @@ public class ProductDetailActivity extends AppCompatActivity {
     private TextView productName, productBrand, fromLabel, minPriceLabel;
     private LinearLayout supermarketListContainer;
     private LineChart priceEvolutionChart;
+    private BottomNavigationView bottomNavigationView;
 
 
     @Override
@@ -49,6 +54,24 @@ public class ProductDetailActivity extends AppCompatActivity {
         minPriceLabel = findViewById(R.id.minPriceLabel);
         supermarketListContainer = findViewById(R.id.supermarketListContainer);
         priceEvolutionChart = findViewById(R.id.priceEvolutionChart);
+        bottomNavigationView = findViewById(R.id.bottomNavigationBar);
+
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.navigation_home) {
+                Intent homeIntent = new Intent(ProductDetailActivity.this, HomeActivity.class);
+                startActivity(homeIntent);
+                finish();
+                return true;
+            } else if (id == R.id.navigation_scan) {
+                // Acción para scan
+                return true;
+            } else if (id == R.id.navigation_favorites) {
+                // Acción para favoritos
+                return true;
+            }
+            return false;
+        });
 
         Product product = (Product) getIntent().getSerializableExtra("product");
 
