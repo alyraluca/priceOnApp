@@ -45,10 +45,11 @@ public class HomeActivity extends AppCompatActivity {
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.navigation_home) {
-                // Acción para home
+
                 return true;
             } else if (id == R.id.navigation_scan) {
-                // Acción para scan
+                Intent intent = new Intent(this, BarcodeScannerActivity.class);
+                startActivity(intent);
                 return true;
             } else if (id == R.id.navigation_favorites) {
                 // Acción para favoritos

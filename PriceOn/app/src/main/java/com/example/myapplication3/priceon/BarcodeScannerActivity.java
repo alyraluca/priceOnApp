@@ -18,8 +18,9 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-
+import androidx.camera.core.CameraSelector;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
 import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.barcode.BarcodeScanner;
 import com.google.mlkit.vision.barcode.BarcodeScanning;
@@ -31,10 +32,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class BarcodeScannerActivity extends AppCompatActivity {
-    private static final int CAMERA_PERMISSION_REQUEST_CODE = 1001;
+    private PreviewView previewView;
     private ExecutorService cameraExecutor;
-    private BarcodeScanner barcodeScanner;
-    private PreviewView previewView;;
+    private boolean barcodeDetected = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,105 +42,95 @@ public class BarcodeScannerActivity extends AppCompatActivity {
         setContentView(R.layout.activity_barcode_scanner);
 
         previewView = findViewById(R.id.previewView);
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                == PackageManager.PERMISSION_GRANTED) {
-            startCamera();
-        } else {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.CAMERA},
-                    CAMERA_PERMISSION_REQUEST_CODE);
-        }
-        checkCameraPermission();
-        barcodeScanner = BarcodeScanning.getClient();
         cameraExecutor = Executors.newSingleThreadExecutor();
+
+        startCamera();
     }
 
-    @OptIn(markerClass = ExperimentalGetImage.class)
     private void startCamera() {
         ListenableFuture<ProcessCameraProvider> cameraProviderFuture = ProcessCameraProvider.getInstance(this);
 
         cameraProviderFuture.addListener(() -> {
             try {
                 ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-
-                androidx.camera.core.Preview preview = new androidx.camera.core.Preview.Builder().build();
-                preview.setSurfaceProvider(previewView.getSurfaceProvider());
-
-                ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
-                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                        .build();
-
-                imageAnalysis.setAnalyzer(cameraExecutor, imageProxy -> {
-                    @androidx.camera.core.ExperimentalGetImage
-                    android.media.Image mediaImage = imageProxy.getImage();
-                    if (mediaImage != null) {
-                        InputImage image = InputImage.fromMediaImage(mediaImage, imageProxy.getImageInfo().getRotationDegrees());
-
-                        barcodeScanner.process(image)
-                                .addOnSuccessListener(barcodes -> {
-                                    processBarcodes(barcodes);
-                                })
-                                .addOnFailureListener(e -> Log.e("BarcodeScanner", "Error scanning barcode", e))
-                                .addOnCompleteListener(task -> imageProxy.close());
-                    } else {
-                        imageProxy.close();
-                    }
-                });
-
-                cameraProvider.unbindAll();
-                cameraProvider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageAnalysis);
-
+                bindPreviewAndAnalyzer(cameraProvider);
             } catch (ExecutionException | InterruptedException e) {
                 e.printStackTrace();
             }
         }, ContextCompat.getMainExecutor(this));
     }
 
-    private void processBarcodes(List<Barcode> barcodes) {
-        for (Barcode barcode : barcodes) {
-            String rawValue = barcode.getRawValue();
-            if (rawValue != null) {
-                Toast.makeText(this, "Código escaneado: " + rawValue, Toast.LENGTH_LONG).show();
+    private void bindPreviewAndAnalyzer(@NonNull ProcessCameraProvider cameraProvider) {
+        cameraProvider.unbindAll();
 
-                Intent resultIntent = new Intent();
-                resultIntent.putExtra("scanned_code", rawValue);
-                setResult(RESULT_OK, resultIntent);
-                finish();
-                break;
+        androidx.camera.core.Preview preview = new androidx.camera.core.Preview.Builder().build();
+        preview.setSurfaceProvider(previewView.getSurfaceProvider());
+
+        CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
+
+        ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .build();
+
+        BarcodeScannerOptions options =
+                new BarcodeScannerOptions.Builder()
+                        .setBarcodeFormats(
+                                Barcode.FORMAT_EAN_13,
+                                Barcode.FORMAT_EAN_8,
+                                Barcode.FORMAT_UPC_A,
+                                Barcode.FORMAT_CODE_39,
+                                Barcode.FORMAT_CODE_128)
+                        .build();
+
+        BarcodeScanner scanner = BarcodeScanning.getClient(options);
+
+        imageAnalysis.setAnalyzer(cameraExecutor, imageProxy -> {
+            if (barcodeDetected) {
+                imageProxy.close();
+                return;
             }
-        }
+            processImageProxy(scanner, imageProxy);
+        });
+
+        cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis);
     }
 
-    private void checkCameraPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.CAMERA},
-                    CAMERA_PERMISSION_REQUEST_CODE);
+    private void processImageProxy(BarcodeScanner scanner, ImageProxy imageProxy) {
+        @androidx.camera.core.ExperimentalGetImage
+        android.media.Image mediaImage = imageProxy.getImage();
+        if (mediaImage != null) {
+            InputImage image = InputImage.fromMediaImage(mediaImage, imageProxy.getImageInfo().getRotationDegrees());
+            scanner.process(image)
+                    .addOnSuccessListener(barcodes -> {
+                        for (Barcode barcode : barcodes) {
+                            String rawValue = barcode.getRawValue();
+                            if (rawValue != null && !barcodeDetected) {
+                                barcodeDetected = true;
+                                runOnUiThread(() -> {
+                                    Toast.makeText(this, "Código detectado: " + rawValue, Toast.LENGTH_SHORT).show();
+                                    openProductDetailWithBarcode(rawValue);
+                                });
+                                break;
+                            }
+                        }
+                    })
+                    .addOnFailureListener(Throwable::printStackTrace)
+                    .addOnCompleteListener(task -> imageProxy.close());
         } else {
-            startCamera();
+            imageProxy.close();
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startCamera();
-            } else {
-                Toast.makeText(this, "Permiso de cámara denegado", Toast.LENGTH_SHORT).show();
-            }
-        }
+    private void openProductDetailWithBarcode(String barcode) {
+        Intent intent = new Intent(this, ProductDetailFromBarcodeActivity.class);
+        intent.putExtra("barcode", barcode);
+        startActivity(intent);
+        finish();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         cameraExecutor.shutdown();
-        barcodeScanner.close();
     }
 }

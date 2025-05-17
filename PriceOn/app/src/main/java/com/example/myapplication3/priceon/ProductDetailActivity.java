@@ -64,7 +64,8 @@ public class ProductDetailActivity extends AppCompatActivity {
                 finish();
                 return true;
             } else if (id == R.id.navigation_scan) {
-                // Acción para scan
+                Intent intent = new Intent(this, BarcodeScannerActivity.class);
+                startActivity(intent);
                 return true;
             } else if (id == R.id.navigation_favorites) {
                 // Acción para favoritos
