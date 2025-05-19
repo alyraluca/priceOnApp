@@ -210,7 +210,6 @@ public class ProductDetailActivity extends AppCompatActivity {
         List<Long> sortedDates = new ArrayList<>(pricesByDate.keySet());
         Collections.sort(sortedDates);
 
-        // Quedarse solo con las últimas 4 fechas
         if (sortedDates.size() > 4) {
             sortedDates = sortedDates.subList(sortedDates.size() - 4, sortedDates.size());
         }
@@ -250,9 +249,14 @@ public class ProductDetailActivity extends AppCompatActivity {
 
         YAxis yAxis = priceEvolutionChart.getAxisLeft();
 
-        float margin = (maxPrice - minPrice) * 0.05f;
-        yAxis.setAxisMinimum(minPrice);
-        yAxis.setAxisMaximum(maxPrice);
+        float margin = (maxPrice - minPrice) * 0.1f;
+        if (margin == 0) {
+            margin = 0.1f;
+        }
+
+        yAxis.setAxisMinimum(minPrice - margin);
+        yAxis.setAxisMaximum(maxPrice + margin);
+
         yAxis.setLabelCount(2, true);
 
         priceEvolutionChart.getAxisRight().setEnabled(false);

@@ -305,7 +305,7 @@ public class ProductDetailFromBarcodeActivity extends AppCompatActivity {
             maxPrice = Math.max(maxPrice, y);
         }
 
-        float margin = (maxPrice - minPrice) * 0.05f;
+        float margin = (maxPrice - minPrice) * 0.1f;
         YAxis yAxis = priceEvolutionChart.getAxisLeft();
         yAxis.setAxisMinimum(minPrice - margin);
         yAxis.setAxisMaximum(maxPrice + margin);
