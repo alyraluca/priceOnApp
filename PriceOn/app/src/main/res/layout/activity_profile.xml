@@ -7,6 +7,7 @@
 
     <!-- BARRA SUPERIOR -->
     <include
+        android:id="@+id/topAppBar"
         layout="@layout/top_app_bar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -21,7 +22,7 @@
         android:layout_height="0dp"
         android:fillViewport="true"
         app:layout_constraintTop_toBottomOf="@id/topAppBar"
-        app:layout_constraintBottom_toTopOf="@id/bottom_nav"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavigationBar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
@@ -52,6 +53,22 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 android:layout_marginTop="16dp" />
 
+
+            <!-- ROL (solo lectura, texto gris) -->
+            <EditText
+                android:id="@+id/editRole"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:hint="Rol"
+                android:enabled="false"
+                android:focusable="false"
+                android:textColor="@android:color/darker_gray"
+                android:layout_marginTop="16dp"
+                app:layout_constraintTop_toBottomOf="@id/editEmail"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"/>
+
+
             <!-- BOTÓN GUARDAR -->
             <Button
                 android:id="@+id/saveButton"
@@ -59,7 +76,7 @@
                 android:layout_height="wrap_content"
                 android:text="Guardar"
                 android:enabled="false"
-                app:layout_constraintTop_toBottomOf="@id/editEmail"
+                app:layout_constraintTop_toBottomOf="@id/editRole"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/logoutButton"
                 android:layout_marginTop="24dp"
@@ -71,7 +88,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:text="Cerrar sesión"
-                app:layout_constraintTop_toBottomOf="@id/editEmail"
+                app:layout_constraintTop_toBottomOf="@id/editRole"
                 app:layout_constraintStart_toEndOf="@id/saveButton"
                 app:layout_constraintEnd_toEndOf="parent"
                 android:layout_marginTop="24dp"
@@ -84,7 +101,7 @@
 
     <!-- BARRA INFERIOR -->
     <include
-        android:id="@+id/bottom_nav"
+        android:id="@+id/bottomNavigationBar"
         layout="@layout/bottom_nav"
         android:layout_width="0dp"
         android:layout_height="wrap_content"

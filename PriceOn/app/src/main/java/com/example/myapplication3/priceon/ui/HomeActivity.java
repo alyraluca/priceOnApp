@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.myapplication3.priceon.BarcodeScannerActivity;
+import com.example.myapplication3.priceon.FavoritesActivity;
 import com.example.myapplication3.priceon.ProfileActivity;
 import com.example.myapplication3.priceon.R;
 import com.example.myapplication3.priceon.data.model.Product;
@@ -48,19 +49,18 @@ public class HomeActivity extends AppCompatActivity {
         bottomNavigationView = findViewById(R.id.bottomNavigationBar);
 
         MaterialToolbar topAppBar = findViewById(R.id.topAppBar);
+        setSupportActionBar(topAppBar);
         topAppBar.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == R.id.action_profile) {
                 FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
                 if (currentUser != null) {
-                    // Usuario autenticado → abrir perfil
-                    startActivity(new Intent(HomeActivity.this, ProfileActivity.class));
+                    startActivity(new Intent(this, ProfileActivity.class));
                 } else {
-                    // Usuario invitado → volver a pantalla principal
-                    Intent intent = new Intent(HomeActivity.this, MainActivity.class);
+                    Intent intent = new Intent(this, MainActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
-                    finish(); // Cierra HomeActivity para que no pueda volver con el botón atrás
+                    finish();
                 }
 
                 return true;
@@ -72,14 +72,13 @@ public class HomeActivity extends AppCompatActivity {
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.navigation_home) {
-
                 return true;
             } else if (id == R.id.navigation_scan) {
                 Intent intent = new Intent(this, BarcodeScannerActivity.class);
                 startActivity(intent);
                 return true;
             } else if (id == R.id.navigation_favorites) {
-                // Acción para favoritos
+                startActivity(new Intent(this, FavoritesActivity.class));
                 return true;
             }
             return false;

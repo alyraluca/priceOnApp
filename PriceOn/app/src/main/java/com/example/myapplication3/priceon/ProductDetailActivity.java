@@ -8,8 +8,10 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.myapplication3.priceon.ui.HomeActivity;
+import com.example.myapplication3.priceon.ui.MainActivity;
 import com.github.mikephil.charting.charts.LineChart;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,8 +23,11 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.ValueFormatter;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
@@ -32,64 +37,177 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class ProductDetailActivity extends AppCompatActivity {
 
-    private ImageView productImage;
+    private ImageView productImage, favoriteIcon;
     private TextView productName, productBrand, fromLabel, minPriceLabel;
     private LinearLayout supermarketListContainer;
     private LineChart priceEvolutionChart;
     private BottomNavigationView bottomNavigationView;
 
+    //Changes
+    private boolean isFavorite = false;
+    private String favDocId;
+    private FirebaseFirestore db;
+    private String uid;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_product_detail);
+            super.onCreate(savedInstanceState);
+            setContentView(R.layout.activity_product_detail);
 
-        productImage = findViewById(R.id.productImage);
-        productName = findViewById(R.id.productName);
-        productBrand = findViewById(R.id.productBrand);
-        fromLabel = findViewById(R.id.fromLabel);
-        minPriceLabel = findViewById(R.id.minPriceLabel);
-        supermarketListContainer = findViewById(R.id.supermarketListContainer);
-        priceEvolutionChart = findViewById(R.id.priceEvolutionChart);
-        bottomNavigationView = findViewById(R.id.bottomNavigationBar);
+            // inicializaciones
+            db = FirebaseFirestore.getInstance();
+            uid = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
+            favoriteIcon             = findViewById(R.id.favoriteIcon);
 
-        bottomNavigationView.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.navigation_home) {
-                Intent homeIntent = new Intent(ProductDetailActivity.this, HomeActivity.class);
-                startActivity(homeIntent);
-                finish();
-                return true;
-            } else if (id == R.id.navigation_scan) {
-                Intent intent = new Intent(this, BarcodeScannerActivity.class);
-                startActivity(intent);
-                return true;
-            } else if (id == R.id.navigation_favorites) {
-                // Acción para favoritos
+            productImage = findViewById(R.id.productImage);
+            productName = findViewById(R.id.productName);
+            productBrand = findViewById(R.id.productBrand);
+            fromLabel = findViewById(R.id.fromLabel);
+            minPriceLabel = findViewById(R.id.minPriceLabel);
+            supermarketListContainer = findViewById(R.id.supermarketListContainer);
+            priceEvolutionChart = findViewById(R.id.priceEvolutionChart);
+            bottomNavigationView = findViewById(R.id.bottomNavigationBar);
+
+            bottomNavigationView.setOnItemSelectedListener(item -> {
+                int id = item.getItemId();
+                if (id == R.id.navigation_home) {
+                    startActivity(new Intent(this, HomeActivity.class));
+                    finish();
+                    return true;
+                } else if (id == R.id.navigation_scan) {
+                    startActivity(new Intent(this, BarcodeScannerActivity.class));
+                    return true;
+                } else if (id == R.id.navigation_favorites) {
+                    startActivity(new Intent(this, FavoritesActivity.class));
+                    return true;
+                }
+                return false;
+            });
+
+        MaterialToolbar topAppBar = findViewById(R.id.topAppBar);
+        topAppBar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.action_profile) {
+                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+                if (currentUser != null) {
+                    startActivity(new Intent(this, ProfileActivity.class));
+                } else {
+                    Intent intent = new Intent(this, MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish(); // Cierra HomeActivity para que no pueda volver con el botón atrás
+                }
+
                 return true;
             }
             return false;
         });
 
-        Product product = (Product) getIntent().getSerializableExtra("product");
+            Product product = (Product) getIntent().getSerializableExtra("product");
 
-        if (product != null) {
+            if (product == null) return; //
+
             productName.setText(product.getName());
             productBrand.setText(product.getBrandName());
             minPriceLabel.setText(product.getMinPrice() + " €");
 
             Glide.with(this)
                     .load(product.getPhotoUrl())
-                    .placeholder(R.drawable.ic_launcher_background)
                     .into(productImage);
+
+            checkFavoriteState(product.getId());
+            favoriteIcon.setOnClickListener(v -> {
+                if (isFavorite) {
+                    removeFromFavorites();
+                } else {
+                    addToFavorites(product.getId());
+                }
+            });
+
 
             loadSupermarkets(product);
             loadPriceEvolution(product);
 
-        }
+    //        if (product != null) {
+    //            productName.setText(product.getName());
+    //            productBrand.setText(product.getBrandName());
+    //            minPriceLabel.setText(product.getMinPrice() + " €");
+    //
+    //            Glide.with(this)
+    //                    .load(product.getPhotoUrl())
+    //                    .into(productImage);
+    //
+    //            loadSupermarkets(product);
+    //            loadPriceEvolution(product);
+    //
+    //        }
+    }
+
+    private void checkFavoriteState(String productId) {
+        db.collection("users")
+                .document(uid)
+                .collection("favouriteProducts")
+                .whereEqualTo("productId", productId)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(q -> {
+                    if (!q.isEmpty()) {
+                        isFavorite = true;
+                        DocumentSnapshot doc = q.getDocuments().get(0);
+                        favDocId = doc.getId();
+                        favoriteIcon.setColorFilter(
+                                getResources().getColor(android.R.color.holo_red_dark)
+                        );
+                    } else {
+                        isFavorite = false;
+                        favoriteIcon.setColorFilter(
+                                getResources().getColor(android.R.color.darker_gray)
+                        );
+                    }
+                });
+    }
+
+    private void addToFavorites(String productId) {
+        Map<String, Object> fav = new HashMap<>();
+        fav.put("productId", productId);
+        db.collection("users")
+                .document(uid)
+                .collection("favouriteProducts")
+                .add(fav)
+                .addOnSuccessListener(docRef -> {
+                    isFavorite = true;
+                    favDocId = docRef.getId();
+                    favoriteIcon.setColorFilter(
+                            getResources().getColor(android.R.color.holo_red_dark)
+                    );
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Error al guardar favorito", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void removeFromFavorites() {
+        if (favDocId == null) return;
+        db.collection("users")
+                .document(uid)
+                .collection("favouriteProducts")
+                .document(favDocId)
+                .delete()
+                .addOnSuccessListener(v -> {
+                    isFavorite = false;
+                    favoriteIcon.setColorFilter(
+                            getResources().getColor(android.R.color.darker_gray)
+                    );
+                    favDocId = null;
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Error al eliminar favorito", Toast.LENGTH_SHORT).show();
+                });
     }
     private void loadSupermarkets(Product product) {
         LinearLayout container = findViewById(R.id.supermarketListContainer);
@@ -109,52 +227,49 @@ public class ProductDetailActivity extends AppCompatActivity {
 
                         db.collection("supermarkets").document(supermarketId).get()
                                 .addOnSuccessListener(supermarketDoc -> {
-                                    if (supermarketDoc.exists()) {
-                                        String supermarketName = supermarketDoc.getString("name");
 
-                                        if (supermarketName != null) {
-                                            db.collection("productSupermarket").document(doc.getId())
-                                                    .collection("priceUpdate")
-                                                    .orderBy("lastPriceUpdate", Query.Direction.DESCENDING)
-                                                    .limit(1)
-                                                    .get()
-                                                    .addOnSuccessListener(priceDocs -> {
-                                                        if (!priceDocs.isEmpty()) {
-                                                            DocumentSnapshot priceDoc = priceDocs.getDocuments().get(0);
-                                                            Double price = priceDoc.getDouble("price");
+                                    String supermarketName = supermarketDoc.getString("name");
 
-                                                            View item = LayoutInflater.from(this).inflate(R.layout.item_supermarket_info, container, false);
+                                    db.collection("productSupermarket").document(doc.getId())
+                                            .collection("priceUpdate")
+                                            .orderBy("lastPriceUpdate", Query.Direction.DESCENDING)
+                                            .limit(1)
+                                            .get()
+                                            .addOnSuccessListener(priceDocs -> {
+                                                if (!priceDocs.isEmpty()) {
+                                                    DocumentSnapshot priceDoc = priceDocs.getDocuments().get(0);
+                                                    Double price = priceDoc.getDouble("price");
 
-                                                            ImageView logo = item.findViewById(R.id.supermarketLogo);
-                                                            TextView name = item.findViewById(R.id.supermarketName);
-                                                            TextView priceText = item.findViewById(R.id.supermarketPrice);
-                                                            TextView unitPriceText = item.findViewById(R.id.supermarketUnitPrice);
+                                                    View item = LayoutInflater.from(this).inflate(R.layout.item_supermarket_info, container, false);
 
-                                                            name.setText(supermarketName);
-                                                            priceText.setText(String.format("%.2f €", price));
+                                                    ImageView logo = item.findViewById(R.id.supermarketLogo);
+                                                    TextView name = item.findViewById(R.id.supermarketName);
+                                                    TextView priceText = item.findViewById(R.id.supermarketPrice);
+                                                    TextView unitPriceText = item.findViewById(R.id.supermarketUnitPrice);
 
-                                                            if (quantityUnity > 0 && price != null) {
-                                                                double unitPrice = price / quantityUnity;
-                                                                unitPriceText.setText(String.format("%.2f € / %s", unitPrice, unit));
-                                                                unitPriceText.setVisibility(View.VISIBLE);
-                                                            } else {
-                                                                unitPriceText.setText("N/A");
-                                                            }
-                                                            Log.d("DEBUG", "price: " + price);
+                                                    name.setText(supermarketName);
+                                                    priceText.setText(String.format("%.2f €", price));
 
-                                                            if ("Mercadona".equalsIgnoreCase(supermarketName)) {
-                                                                logo.setImageResource(R.drawable.mercadona);
-                                                            } else if ("Dia".equalsIgnoreCase(supermarketName)) {
-                                                                logo.setImageResource(R.drawable.dia_logo);
-                                                            } else {
-                                                                logo.setImageResource(R.drawable.alcampo);
-                                                            }
+                                                    if (quantityUnity > 0 && price != null) {
+                                                        double unitPrice = price / quantityUnity;
+                                                        unitPriceText.setText(String.format("%.2f € / %s", unitPrice, unit));
+                                                        unitPriceText.setVisibility(View.VISIBLE);
+                                                    } else {
+                                                        unitPriceText.setText("N/A");
+                                                    }
+                                                    Log.d("DEBUG", "price: " + price);
 
-                                                            container.addView(item);
-                                                        }
-                                                    });
-                                        }
-                                    }
+                                                    if ("Mercadona".equalsIgnoreCase(supermarketName)) {
+                                                        logo.setImageResource(R.drawable.mercadona);
+                                                    } else if ("Dia".equalsIgnoreCase(supermarketName)) {
+                                                        logo.setImageResource(R.drawable.dia_logo);
+                                                    } else {
+                                                        logo.setImageResource(R.drawable.alcampo);
+                                                    }
+
+                                                    container.addView(item);
+                                                }
+                                            });
                                 });
                     }
                 });
@@ -210,6 +325,7 @@ public class ProductDetailActivity extends AppCompatActivity {
         List<Long> sortedDates = new ArrayList<>(pricesByDate.keySet());
         Collections.sort(sortedDates);
 
+        // Quedarse solo con las últimas 4 fechas
         if (sortedDates.size() > 4) {
             sortedDates = sortedDates.subList(sortedDates.size() - 4, sortedDates.size());
         }
@@ -250,13 +366,8 @@ public class ProductDetailActivity extends AppCompatActivity {
         YAxis yAxis = priceEvolutionChart.getAxisLeft();
 
         float margin = (maxPrice - minPrice) * 0.1f;
-        if (margin == 0) {
-            margin = 0.1f;
-        }
-
-        yAxis.setAxisMinimum(minPrice - margin);
-        yAxis.setAxisMaximum(maxPrice + margin);
-
+        yAxis.setAxisMinimum(minPrice-margin);
+        yAxis.setAxisMaximum(maxPrice+margin);
         yAxis.setLabelCount(2, true);
 
         priceEvolutionChart.getAxisRight().setEnabled(false);

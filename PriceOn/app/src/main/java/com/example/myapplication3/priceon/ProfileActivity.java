@@ -14,49 +14,69 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.myapplication3.priceon.ui.HomeActivity;
 import com.example.myapplication3.priceon.ui.MainActivity;
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class ProfileActivity extends AppCompatActivity {
 
-    private EditText editName, editEmail;
+    private EditText editName, editEmail, editRole;
     private Button saveButton;
-
     private FirebaseFirestore db;
     private FirebaseAuth mAuth;
-
+    private BottomNavigationView bottomNavigationView;
     private String originalName = "", originalEmail = "";
     private Button logoutButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_profile);
+
+        MaterialToolbar topAppBar = findViewById(R.id.topAppBar);
+        setSupportActionBar(topAppBar);
+        Objects.requireNonNull(getSupportActionBar()).setDisplayHomeAsUpEnabled(true);
+
+        bottomNavigationView = findViewById(R.id.bottomNavigationBar);
+        editName = findViewById(R.id.editName);
+        editEmail = findViewById(R.id.editEmail);
+        saveButton = findViewById(R.id.saveButton);
+        editRole   = findViewById(R.id.editRole);
+        db = FirebaseFirestore.getInstance();
+        mAuth = FirebaseAuth.getInstance();
+
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.navigation_home) {
+                startActivity(new Intent(this, HomeActivity.class));
+                finish();
+                return true;
+            } else if (id == R.id.navigation_scan) {
+                startActivity(new Intent(this, BarcodeScannerActivity.class));
+                return true;
+            } else if (id == R.id.navigation_favorites) {
+                startActivity(new Intent(this, FavoritesActivity.class));
+                return true;
+            }
+            return false;
+        });
 
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
-            // Usuario no autenticado → redirigir
             Intent intent = new Intent(ProfileActivity.this, MainActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             finish();
             return;
         }
-
-        setContentView(R.layout.activity_profile);
-
-        editName = findViewById(R.id.editName);
-        editEmail = findViewById(R.id.editEmail);
-        saveButton = findViewById(R.id.saveButton);
-
-
-        db = FirebaseFirestore.getInstance();
-        mAuth = FirebaseAuth.getInstance();
-
         loadUserData();
 
         TextWatcher watcher = new TextWatcher() {
@@ -91,9 +111,11 @@ public class ProfileActivity extends AppCompatActivity {
             if (document.exists()) {
                 originalName = document.getString("name");
                 originalEmail = document.getString("email");
+                String role   = document.getString("role");
 
                 editName.setText(originalName);
                 editEmail.setText(originalEmail);
+                editRole.setText(role != null ? role : "user");
             } else {
                 // No existe usuario en Firestore → cerrar sesión y redirigir
                 FirebaseAuth.getInstance().signOut();
