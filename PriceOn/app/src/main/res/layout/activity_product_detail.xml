@@ -9,17 +9,17 @@
         android:id="@+id/topAppBar"
         layout="@layout/top_app_bar"
         android:layout_width="0dp"
-        android:elevation="4dp"
         android:layout_height="wrap_content"
+        android:elevation="4dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <ScrollView
         android:id="@+id/scrollContent"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:fillViewport="true"
         android:padding="16dp"
         app:layout_constraintTop_toBottomOf="@id/topAppBar"
         app:layout_constraintBottom_toTopOf="@id/bottomNavigationBar"
@@ -31,8 +31,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="56dp">
+
             <FrameLayout
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal">
 
@@ -40,62 +41,73 @@
                     android:id="@+id/productImage"
                     android:layout_width="200dp"
                     android:layout_height="200dp"
-                    android:scaleType="centerCrop"
-                    android:layout_gravity="center_horizontal"/>
+                    android:layout_gravity="center_horizontal"
+                    android:scaleType="centerCrop" />
+
+            </FrameLayout>
+
+            <!-- Nombre y corazón en la misma fila -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="12dp">
+
+                <TextView
+                    android:id="@+id/productName"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="16dp"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
 
                 <ImageView
                     android:id="@+id/favoriteIcon"
                     android:layout_width="32dp"
                     android:layout_height="32dp"
-                    android:layout_gravity="top|end"
-                    android:layout_margin="8dp"
                     android:src="@drawable/heart"
                     android:clickable="true"
-                    android:focusable="true" />
-            </FrameLayout>
+                    android:focusable="true"
+                    android:layout_marginStart="8dp" />
 
-            <TextView
-                android:id="@+id/productName"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:layout_marginTop="12dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/productBrand"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:textSize="16sp"
                 android:textColor="@android:color/darker_gray"
-                android:layout_marginBottom="12dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_marginBottom="12dp" />
 
             <TextView
                 android:id="@+id/fromLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Desde"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:layout_marginTop="12dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_marginTop="12dp" />
 
             <TextView
                 android:id="@+id/minPriceLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:textSize="24sp"
                 android:textColor="@android:color/holo_green_dark"
                 android:textStyle="bold"
-                android:layout_marginBottom="16dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_marginBottom="16dp" />
 
             <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Dónde encontrarlo"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_marginTop="16dp"
-                android:layout_marginBottom="8dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_marginBottom="8dp" />
 
             <LinearLayout
                 android:id="@+id/supermarketListContainer"
@@ -104,13 +116,13 @@
                 android:layout_height="wrap_content" />
 
             <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Evolución del precio"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_marginTop="24dp"
-                android:layout_marginBottom="8dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_marginBottom="8dp" />
 
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/priceEvolutionChart"
@@ -118,7 +130,6 @@
                 android:layout_height="250dp" />
 
         </LinearLayout>
-
     </ScrollView>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView

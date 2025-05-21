@@ -43,19 +43,22 @@ import java.util.List;
 import java.util.Map;
 
 public class ProductDetailFromBarcodeActivity extends AppCompatActivity {
-    private ImageView productImage;
+    private ImageView productImage, favoriteIcon;
     private TextView productName, productBrand, minPriceLabel;
     private LinearLayout supermarketListContainer;
     private LineChart priceEvolutionChart;
     private BottomNavigationView bottomNavigationView;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private Product product;
+    private String uid, productId;
+    private boolean isFavorite = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_product_detail_from_barcode);
 
+        favoriteIcon = findViewById(R.id.favoriteIcon);
         productImage = findViewById(R.id.productImage);
         productName = findViewById(R.id.productName);
         productBrand = findViewById(R.id.productBrand);
@@ -63,6 +66,14 @@ public class ProductDetailFromBarcodeActivity extends AppCompatActivity {
         supermarketListContainer = findViewById(R.id.supermarketListContainer);
         priceEvolutionChart = findViewById(R.id.priceEvolutionChart);
         bottomNavigationView = findViewById(R.id.bottomNavigationBar);
+
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            uid = user.getUid();
+        } else {
+            uid = null;
+            favoriteIcon.setVisibility(View.GONE);
+        }
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
@@ -93,7 +104,6 @@ public class ProductDetailFromBarcodeActivity extends AppCompatActivity {
                     startActivity(intent);
                     finish(); // Cierra HomeActivity para que no pueda volver con el botón atrás
                 }
-
                 return true;
             }
             return false;
@@ -106,6 +116,50 @@ public class ProductDetailFromBarcodeActivity extends AppCompatActivity {
             Toast.makeText(this, "No se recibió código de barras", Toast.LENGTH_LONG).show();
             finish();
         }
+
+    }
+
+    // -- mismos métodos de favoritos --
+    private void checkFavoriteState() {
+        db.collection("users")
+                .document(uid)
+                .collection("favouriteProducts")
+                .document(productId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    isFavorite = doc.exists();
+                    updateHeartIcon();
+                });
+    }
+    private void addToFavorites() {
+        Map<String,Object> data = new HashMap<>();
+        data.put("productId", productId);
+        db.collection("users")
+                .document(uid)
+                .collection("favouriteProducts")
+                .document(productId)
+                .set(data)
+                .addOnSuccessListener(v -> {
+                    isFavorite = true;
+                    updateHeartIcon();
+                });
+    }
+    private void removeFromFavorites() {
+        db.collection("users")
+                .document(uid)
+                .collection("favouriteProducts")
+                .document(productId)
+                .delete()
+                .addOnSuccessListener(v -> {
+                    isFavorite = false;
+                    updateHeartIcon();
+                });
+    }
+    private void updateHeartIcon() {
+        int res = isFavorite
+                ? R.drawable.corazon_relleno
+                : R.drawable.heart;
+        favoriteIcon.setImageResource(res);
     }
 
     private void searchProductByBarcode(String barcode) {
@@ -119,6 +173,20 @@ public class ProductDetailFromBarcodeActivity extends AppCompatActivity {
                         product = doc.toObject(Product.class);
                         if (product != null) {
                             updateUI(product);
+                            productId = product.getId();
+                            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                            if (user != null) {
+                                uid = user.getUid();
+                                favoriteIcon.setVisibility(View.VISIBLE);
+
+                                checkFavoriteState();
+                                favoriteIcon.setOnClickListener(v -> {
+                                    if (isFavorite) removeFromFavorites();
+                                    else addToFavorites();
+                                });
+                            } else {
+                                favoriteIcon.setVisibility(View.GONE);
+                            }
                             loadSupermarkets();
                             loadPriceEvolution();
                         } else {
