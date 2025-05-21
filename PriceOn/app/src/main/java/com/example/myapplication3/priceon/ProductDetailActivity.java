@@ -173,6 +173,7 @@ public class ProductDetailActivity extends AppCompatActivity {
     }
 
     private void addToFavorites(String productId) {
+        String uid = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
         Map<String, Object> fav = new HashMap<>();
         fav.put("productId", productId);
         db.collection("users")
@@ -180,16 +181,15 @@ public class ProductDetailActivity extends AppCompatActivity {
                 .collection("favouriteProducts")
                 .add(fav)
                 .addOnSuccessListener(docRef -> {
-                    isFavorite = true;
-                    favDocId = docRef.getId();
-                    favoriteIcon.setColorFilter(
-                            getResources().getColor(android.R.color.holo_red_dark)
-                    );
+                    // docRef.getId() es el ID del doc guardado en favouriteProducts
+                    Log.d("FAV", "Guardado en favoritos: " + docRef.getId());
+                    // color rojo, etc.
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Error al guardar favorito", Toast.LENGTH_SHORT).show();
+                    Log.e("FAV", "Error guardando favorito", e);
                 });
     }
+
 
     private void removeFromFavorites() {
         if (favDocId == null) return;

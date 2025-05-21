@@ -19,9 +19,11 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class FavoritesActivity extends AppCompatActivity {
 
@@ -79,7 +81,7 @@ public class FavoritesActivity extends AppCompatActivity {
 
     private void fetchProducts(List<String> ids) {
         if (ids.isEmpty()) return;
-        db.collection("products")  // o donde tengas tu colección principal
+        db.collection("products")
                 .whereIn(FieldPath.documentId(), ids)
                 .get()
                 .addOnSuccessListener(query -> {
@@ -89,7 +91,51 @@ public class FavoritesActivity extends AppCompatActivity {
                         p.setId(doc.getId());
                         favorites.add(p);
                     }
-                    adapter.setItems(favorites);
+                    // Ahora calculamos el precio mínimo de cada uno:
+                    calculateMinPrices(favorites);
                 });
     }
+
+    private void calculateMinPrices(List<Product> list) {
+        AtomicInteger processed = new AtomicInteger(0);
+        for (Product p : list) {
+            db.collection("productSupermarket")
+                    .whereEqualTo("productId", p.getId())
+                    .get()
+                    .addOnSuccessListener(snaps -> {
+                        final double[] min = {Double.MAX_VALUE};
+                        for (DocumentSnapshot superDoc : snaps) {
+                            String psId = superDoc.getId();
+                            // obtenemos el último precio
+                            db.collection("productSupermarket")
+                                    .document(psId)
+                                    .collection("priceUpdate")
+                                    .orderBy("lastPriceUpdate", Query.Direction.DESCENDING)
+                                    .limit(1)
+                                    .get()
+                                    .addOnSuccessListener(priceSnaps -> {
+                                        for (DocumentSnapshot priceDoc : priceSnaps) {
+                                            Double price = priceDoc.getDouble("price");
+                                            if (price != null && price < min[0]) min[0] = price;
+                                        }
+                                        // si hemos encontrado uno
+                                        if (min[0] < Double.MAX_VALUE) {
+                                            p.setMinPrice(min[0]);
+                                        } else {
+                                            p.setMinPrice(0.0); // o marca N/A
+                                        }
+                                        if (processed.incrementAndGet() == list.size()) {
+                                            // todos procesados
+                                            adapter.setItems(list);
+                                        }
+                                    });
+                        }
+                        // si no había supermercados:
+                        if (snaps.isEmpty() && processed.incrementAndGet() == list.size()) {
+                            adapter.setItems(list);
+                        }
+                    });
+        }
+    }
+
 }
