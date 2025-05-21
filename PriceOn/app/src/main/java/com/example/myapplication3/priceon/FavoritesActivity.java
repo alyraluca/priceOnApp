@@ -13,9 +13,12 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.myapplication3.priceon.data.model.Product;
 import com.example.myapplication3.priceon.ui.HomeActivity;
+import com.example.myapplication3.priceon.ui.MainActivity;
 import com.example.myapplication3.priceon.ui.adapter.FavoritesAdapter;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -57,6 +60,25 @@ public class FavoritesActivity extends AppCompatActivity {
                 startActivity(new Intent(this, BarcodeScannerActivity.class));
                 return true;
             } else if (id == R.id.navigation_favorites) {
+                return true;
+            }
+            return false;
+        });
+
+        MaterialToolbar topAppBar = findViewById(R.id.topAppBar);
+        topAppBar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.action_profile) {
+                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+                if (currentUser != null) {
+                    startActivity(new Intent(this, ProfileActivity.class));
+                } else {
+                    Intent intent = new Intent(this, MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish(); // Cierra HomeActivity para que no pueda volver con el botón atrás
+                }
+
                 return true;
             }
             return false;

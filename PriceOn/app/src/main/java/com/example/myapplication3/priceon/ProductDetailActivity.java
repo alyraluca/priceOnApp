@@ -28,6 +28,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
@@ -49,45 +50,54 @@ public class ProductDetailActivity extends AppCompatActivity {
 
     //Changes
     private boolean isFavorite = false;
-    private String favDocId;
-    private FirebaseFirestore db;
     private String uid;
+    private String productId;
+    private FirebaseFirestore db;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            setContentView(R.layout.activity_product_detail);
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_product_detail);
 
-            // inicializaciones
-            db = FirebaseFirestore.getInstance();
-            uid = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
-            favoriteIcon             = findViewById(R.id.favoriteIcon);
+        // inicializaciones
+        db = FirebaseFirestore.getInstance();
+        favoriteIcon = findViewById(R.id.favoriteIcon);
+        productImage = findViewById(R.id.productImage);
+        productName = findViewById(R.id.productName);
+        productBrand = findViewById(R.id.productBrand);
+        fromLabel = findViewById(R.id.fromLabel);
+        minPriceLabel = findViewById(R.id.minPriceLabel);
+        supermarketListContainer = findViewById(R.id.supermarketListContainer);
+        priceEvolutionChart = findViewById(R.id.priceEvolutionChart);
+        bottomNavigationView = findViewById(R.id.bottomNavigationBar);
 
-            productImage = findViewById(R.id.productImage);
-            productName = findViewById(R.id.productName);
-            productBrand = findViewById(R.id.productBrand);
-            fromLabel = findViewById(R.id.fromLabel);
-            minPriceLabel = findViewById(R.id.minPriceLabel);
-            supermarketListContainer = findViewById(R.id.supermarketListContainer);
-            priceEvolutionChart = findViewById(R.id.priceEvolutionChart);
-            bottomNavigationView = findViewById(R.id.bottomNavigationBar);
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            uid = user.getUid();
+        } else {
+            uid = null;
+        }
 
-            bottomNavigationView.setOnItemSelectedListener(item -> {
-                int id = item.getItemId();
-                if (id == R.id.navigation_home) {
-                    startActivity(new Intent(this, HomeActivity.class));
-                    finish();
-                    return true;
-                } else if (id == R.id.navigation_scan) {
-                    startActivity(new Intent(this, BarcodeScannerActivity.class));
-                    return true;
-                } else if (id == R.id.navigation_favorites) {
-                    startActivity(new Intent(this, FavoritesActivity.class));
-                    return true;
-                }
-                return false;
-            });
+        if (uid == null) {
+            favoriteIcon.setVisibility(View.GONE);
+        }
+
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.navigation_home) {
+                startActivity(new Intent(this, HomeActivity.class));
+                finish();
+                return true;
+            } else if (id == R.id.navigation_scan) {
+                startActivity(new Intent(this, BarcodeScannerActivity.class));
+                return true;
+            } else if (id == R.id.navigation_favorites) {
+                startActivity(new Intent(this, FavoritesActivity.class));
+                return true;
+            }
+            return false;
+        });
 
         MaterialToolbar topAppBar = findViewById(R.id.topAppBar);
         topAppBar.setOnMenuItemClickListener(item -> {
@@ -108,107 +118,88 @@ public class ProductDetailActivity extends AppCompatActivity {
             return false;
         });
 
-            Product product = (Product) getIntent().getSerializableExtra("product");
+        Product product = (Product) getIntent().getSerializableExtra("product");
+        if (product == null) return; //
+        productId = product.getId();
 
-            if (product == null) return; //
+        productName.setText(product.getName());
+        productBrand.setText(product.getBrandName());
+        minPriceLabel.setText(product.getMinPrice() + " €");
 
-            productName.setText(product.getName());
-            productBrand.setText(product.getBrandName());
-            minPriceLabel.setText(product.getMinPrice() + " €");
+        Glide.with(this)
+                .load(product.getPhotoUrl())
+                .into(productImage);
 
-            Glide.with(this)
-                    .load(product.getPhotoUrl())
-                    .into(productImage);
 
-            checkFavoriteState(product.getId());
+        if (uid != null) {
+            // Comprueba estado inicial y pinta icono
+            checkFavoriteState();
+
+            // Toggle al clicar
             favoriteIcon.setOnClickListener(v -> {
-                if (isFavorite) {
-                    removeFromFavorites();
-                } else {
-                    addToFavorites(product.getId());
-                }
+                if (isFavorite) removeFromFavorites();
+                else addToFavorites();
             });
-
-
-            loadSupermarkets(product);
-            loadPriceEvolution(product);
-
-    //        if (product != null) {
-    //            productName.setText(product.getName());
-    //            productBrand.setText(product.getBrandName());
-    //            minPriceLabel.setText(product.getMinPrice() + " €");
-    //
-    //            Glide.with(this)
-    //                    .load(product.getPhotoUrl())
-    //                    .into(productImage);
-    //
-    //            loadSupermarkets(product);
-    //            loadPriceEvolution(product);
-    //
-    //        }
+        } else {
+            // Si no hay usuario, oculta completamente el corazón
+            favoriteIcon.setVisibility(View.GONE);
+        }
+        loadSupermarkets(product);
+        loadPriceEvolution(product);
     }
 
-    private void checkFavoriteState(String productId) {
-        db.collection("users")
+    private void checkFavoriteState() {
+        DocumentReference favRef = db
+                .collection("users")
                 .document(uid)
                 .collection("favouriteProducts")
-                .whereEqualTo("productId", productId)
-                .limit(1)
-                .get()
-                .addOnSuccessListener(q -> {
-                    if (!q.isEmpty()) {
-                        isFavorite = true;
-                        DocumentSnapshot doc = q.getDocuments().get(0);
-                        favDocId = doc.getId();
-                        favoriteIcon.setColorFilter(
-                                getResources().getColor(android.R.color.holo_red_dark)
-                        );
-                    } else {
-                        isFavorite = false;
-                        favoriteIcon.setColorFilter(
-                                getResources().getColor(android.R.color.darker_gray)
-                        );
-                    }
-                });
+                .document(productId);
+
+        favRef.get().addOnSuccessListener(doc -> {
+            isFavorite = doc.exists();
+            updateHeartIcon();
+        });
     }
 
-    private void addToFavorites(String productId) {
-        String uid = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
-        Map<String, Object> fav = new HashMap<>();
-        fav.put("productId", productId);
-        db.collection("users")
+    private void addToFavorites() {
+        DocumentReference favRef = db
+                .collection("users")
                 .document(uid)
                 .collection("favouriteProducts")
-                .add(fav)
-                .addOnSuccessListener(docRef -> {
-                    // docRef.getId() es el ID del doc guardado en favouriteProducts
-                    Log.d("FAV", "Guardado en favoritos: " + docRef.getId());
-                    // color rojo, etc.
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("FAV", "Error guardando favorito", e);
-                });
-    }
+                .document(productId);
 
+        Map<String,Object> data = new HashMap<>();
+        data.put("productId", productId);
+
+        favRef.set(data).addOnSuccessListener(v -> {
+            isFavorite = true;
+            updateHeartIcon();
+        }).addOnFailureListener(e ->
+                Toast.makeText(this, "Error al guardar favorito", Toast.LENGTH_SHORT).show()
+        );
+    }
 
     private void removeFromFavorites() {
-        if (favDocId == null) return;
-        db.collection("users")
+        DocumentReference favRef = db
+                .collection("users")
                 .document(uid)
                 .collection("favouriteProducts")
-                .document(favDocId)
-                .delete()
-                .addOnSuccessListener(v -> {
-                    isFavorite = false;
-                    favoriteIcon.setColorFilter(
-                            getResources().getColor(android.R.color.darker_gray)
-                    );
-                    favDocId = null;
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Error al eliminar favorito", Toast.LENGTH_SHORT).show();
-                });
+                .document(productId);
+
+        favRef.delete().addOnSuccessListener(v -> {
+            isFavorite = false;
+            updateHeartIcon();
+        }).addOnFailureListener(e ->
+                Toast.makeText(this, "Error al quitar favorito", Toast.LENGTH_SHORT).show()
+        );
     }
+    private void updateHeartIcon() {
+        int res = isFavorite
+                ? R.drawable.corazon_relleno
+                : R.drawable.heart;
+        favoriteIcon.setImageResource(res);
+    }
+
     private void loadSupermarkets(Product product) {
         LinearLayout container = findViewById(R.id.supermarketListContainer);
         container.removeAllViews();

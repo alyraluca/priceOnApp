@@ -51,8 +51,7 @@
                     android:layout_margin="8dp"
                     android:src="@drawable/heart"
                     android:clickable="true"
-                    android:focusable="true"
-                    app:tint="@android:color/darker_gray" />
+                    android:focusable="true" />
             </FrameLayout>
 
             <TextView
