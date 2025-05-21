@@ -2,9 +2,12 @@ package com.example.myapplication3.priceon;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -14,6 +17,7 @@ import com.example.myapplication3.priceon.ui.HomeActivity;
 import com.example.myapplication3.priceon.ui.MainActivity;
 import com.github.mikephil.charting.charts.LineChart;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import com.bumptech.glide.Glide;
 import com.example.myapplication3.priceon.data.model.Product;
@@ -37,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -47,12 +52,13 @@ public class ProductDetailActivity extends AppCompatActivity {
     private LinearLayout supermarketListContainer;
     private LineChart priceEvolutionChart;
     private BottomNavigationView bottomNavigationView;
-
-    //Changes
     private boolean isFavorite = false;
     private String uid;
     private String productId;
     private FirebaseFirestore db;
+    private String role;
+    private Product product;
+
 
 
     @Override
@@ -60,29 +66,58 @@ public class ProductDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_product_detail);
 
-        // inicializaciones
+        // 1) Instancia de Firebase
         db = FirebaseFirestore.getInstance();
-        favoriteIcon = findViewById(R.id.favoriteIcon);
-        productImage = findViewById(R.id.productImage);
-        productName = findViewById(R.id.productName);
-        productBrand = findViewById(R.id.productBrand);
-        fromLabel = findViewById(R.id.fromLabel);
-        minPriceLabel = findViewById(R.id.minPriceLabel);
-        supermarketListContainer = findViewById(R.id.supermarketListContainer);
-        priceEvolutionChart = findViewById(R.id.priceEvolutionChart);
-        bottomNavigationView = findViewById(R.id.bottomNavigationBar);
 
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user != null) {
-            uid = user.getUid();
-        } else {
-            uid = null;
+        // 2) findViewById de todas las vistas
+        MaterialToolbar topAppBar             = findViewById(R.id.topAppBar);
+        productImage                         = findViewById(R.id.productImage);
+        productName                          = findViewById(R.id.productName);
+        productBrand                         = findViewById(R.id.productBrand);
+        fromLabel                            = findViewById(R.id.fromLabel);
+        minPriceLabel                        = findViewById(R.id.minPriceLabel);
+        favoriteIcon                         = findViewById(R.id.favoriteIcon);
+        supermarketListContainer             = findViewById(R.id.supermarketListContainer);
+        priceEvolutionChart                  = findViewById(R.id.priceEvolutionChart);
+        bottomNavigationView                 = findViewById(R.id.bottomNavigationBar);
+
+
+        // 3) Recupera el producto pasado en el Intent
+        Product product = (Product) getIntent().getSerializableExtra("product");
+        if (product == null) {
+            // Si no hay producto, salimos
+            finish();
+            return;
         }
+        this.product = product;
+        productId = product.getId();
 
-        if (uid == null) {
-            favoriteIcon.setVisibility(View.GONE);
-        }
+        // 4) Rellena la UI básica
+        productName.setText(product.getName());
+        productBrand.setText(product.getBrandName());
+        minPriceLabel.setText(product.getMinPrice() + " €");
+        Glide.with(this)
+                .load(product.getPhotoUrl())
+                .into(productImage);
 
+        // 5) Configura la barra superior
+        topAppBar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.action_profile) {
+                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                Intent intent;
+                if (currentUser != null) {
+                    intent = new Intent(this, ProfileActivity.class);
+                } else {
+                    intent = new Intent(this, MainActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                }
+                startActivity(intent);
+                return true;
+            }
+            return false;
+        });
+
+        // 6) Configura la bottom nav
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.navigation_home) {
@@ -93,60 +128,104 @@ public class ProductDetailActivity extends AppCompatActivity {
                 startActivity(new Intent(this, BarcodeScannerActivity.class));
                 return true;
             } else if (id == R.id.navigation_favorites) {
-                startActivity(new Intent(this, FavoritesActivity.class));
+                // Ya estamos aquí
                 return true;
             }
             return false;
         });
 
-        MaterialToolbar topAppBar = findViewById(R.id.topAppBar);
-        topAppBar.setOnMenuItemClickListener(item -> {
-            if (item.getItemId() == R.id.action_profile) {
-                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        // 7) Obtiene el usuario y su rol (para mostrar el botón de actualizar)
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            uid = user.getUid();
+            // Lectura asíncrona del rol
+            db.collection("users").document(uid).get()
+                    .addOnSuccessListener(doc -> {
+                        role = doc.getString("role");
+                        // Una vez tenemos rol, cargamos lista de supermercados
+                        loadSupermarkets();
+                    });
+        } else {
+            // Sin usuario logueado, ocultamos corazón y cargamos supermercados sin botón
+            favoriteIcon.setVisibility(View.GONE);
+            loadSupermarkets();
+        }
 
-                if (currentUser != null) {
-                    startActivity(new Intent(this, ProfileActivity.class));
-                } else {
-                    Intent intent = new Intent(this, MainActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
-                    finish(); // Cierra HomeActivity para que no pueda volver con el botón atrás
-                }
-
-                return true;
-            }
-            return false;
-        });
-
-        Product product = (Product) getIntent().getSerializableExtra("product");
-        if (product == null) return; //
-        productId = product.getId();
-
-        productName.setText(product.getName());
-        productBrand.setText(product.getBrandName());
-        minPriceLabel.setText(product.getMinPrice() + " €");
-
-        Glide.with(this)
-                .load(product.getPhotoUrl())
-                .into(productImage);
-
-
+        // 8) Si hay usuario, inicializamos el corazón de favoritos
         if (uid != null) {
-            // Comprueba estado inicial y pinta icono
             checkFavoriteState();
-
-            // Toggle al clicar
             favoriteIcon.setOnClickListener(v -> {
                 if (isFavorite) removeFromFavorites();
                 else addToFavorites();
             });
-        } else {
-            // Si no hay usuario, oculta completamente el corazón
-            favoriteIcon.setVisibility(View.GONE);
         }
-        loadSupermarkets(product);
+
         loadPriceEvolution(product);
     }
+
+
+    private void showUpdateDialog(String supermarketName, String psDocId, double oldPrice) {
+        // 1) Creamos el EditText y lo configuramos
+        final EditText input = new androidx.appcompat.widget.AppCompatEditText(this);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        input.setText(String.format(Locale.getDefault(), "%.2f", oldPrice));
+        input.setSelection(input.getText().length()); // opcional: coloca el cursor al final
+
+        // 2) Construimos el diálogo y le pasamos el input directamente
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Actualizar precio")
+                .setMessage("Producto: " + product.getName() +
+                        "\nSupermercado: " + supermarketName)
+                .setView(input)  // aquí va nuestro EditText
+                .setPositiveButton("Guardar", null)   // listener lo añadimos después
+                .setNegativeButton("Cancelar", (d, which) -> d.dismiss())
+                .create();
+
+        dialog.setOnShowListener(d -> {
+            // 3) Capturamos el botón POSITIVO para controlar validación
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                    .setOnClickListener(v -> {
+                        String text = input.getText().toString().trim();
+                        if (text.isEmpty()) {
+                            input.setError("Introduce un precio");
+                            return;
+                        }
+                        double newPrice;
+                        try {
+                            newPrice = Double.parseDouble(text);
+                        } catch (NumberFormatException e) {
+                            input.setError("Formato inválido");
+                            return;
+                        }
+                        if (Math.abs(newPrice - oldPrice) > oldPrice * 0.3) {
+                            input.setError("Cambio demasiado grande");
+                            return;
+                        }
+
+                        // 4) Guardamos en Firestore
+                        Map<String,Object> data = new HashMap<>();
+                        data.put("price", newPrice);
+                        data.put("lastPriceUpdate", Timestamp.now());
+
+                        db.collection("productSupermarket")
+                                .document(psDocId)
+                                .collection("priceUpdate")
+                                .add(data)
+                                .addOnSuccessListener(r -> {
+                                    Toast.makeText(this,"Precio actualizado",Toast.LENGTH_SHORT).show();
+                                    dialog.dismiss();
+                                    loadSupermarkets();  // refrescamos la lista
+                                })
+                                .addOnFailureListener(e -> {
+                                    Toast.makeText(this,"Error al actualizar",Toast.LENGTH_SHORT).show();
+                                });
+                    });
+        });
+
+        dialog.show();
+    }
+
+
 
     private void checkFavoriteState() {
         DocumentReference favRef = db
@@ -200,71 +279,100 @@ public class ProductDetailActivity extends AppCompatActivity {
         favoriteIcon.setImageResource(res);
     }
 
-    private void loadSupermarkets(Product product) {
-        LinearLayout container = findViewById(R.id.supermarketListContainer);
-        container.removeAllViews();
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private void loadSupermarkets() {
+        supermarketListContainer.removeAllViews();
 
         db.collection("productSupermarket")
-                .whereEqualTo("productId", product.getId())
+                .whereEqualTo("productId", productId)
                 .get()
                 .addOnSuccessListener(superDocs -> {
+                    int total = superDocs.size();
+                    if (total == 0) {
+                        minPriceLabel.setText("Precio no disponible");
+                        return;
+                    }
+
+                    // Variables para el mínimo y el control de concurrencia
+                    final double[] minPrice = { Double.MAX_VALUE };
+                    final int[] processed = { 0 };
+
                     for (DocumentSnapshot doc : superDocs) {
+                        String psDocId       = doc.getId();
                         String supermarketId = doc.getString("supermarketId");
-                        double quantityUnity = product.getQuantityUnity();
-                        String unit = product.getUnit() != null ? product.getUnit() : "";
 
-                        Log.d("DEBUG", "quantityUnity: " + quantityUnity + ", unit: " + unit);
-
-                        db.collection("supermarkets").document(supermarketId).get()
+                        // Traer el nombre del súper
+                        db.collection("supermarkets").document(supermarketId)
+                                .get()
                                 .addOnSuccessListener(supermarketDoc -> {
+                                    String name = supermarketDoc.getString("name");
 
-                                    String supermarketName = supermarketDoc.getString("name");
-
-                                    db.collection("productSupermarket").document(doc.getId())
+                                    // Traer el último precio
+                                    db.collection("productSupermarket").document(psDocId)
                                             .collection("priceUpdate")
                                             .orderBy("lastPriceUpdate", Query.Direction.DESCENDING)
                                             .limit(1)
                                             .get()
                                             .addOnSuccessListener(priceDocs -> {
+                                                processed[0]++;
+
                                                 if (!priceDocs.isEmpty()) {
-                                                    DocumentSnapshot priceDoc = priceDocs.getDocuments().get(0);
-                                                    Double price = priceDoc.getDouble("price");
+                                                    double price = priceDocs.getDocuments().get(0).getDouble("price");
 
-                                                    View item = LayoutInflater.from(this).inflate(R.layout.item_supermarket_info, container, false);
-
-                                                    ImageView logo = item.findViewById(R.id.supermarketLogo);
-                                                    TextView name = item.findViewById(R.id.supermarketName);
-                                                    TextView priceText = item.findViewById(R.id.supermarketPrice);
-                                                    TextView unitPriceText = item.findViewById(R.id.supermarketUnitPrice);
-
-                                                    name.setText(supermarketName);
-                                                    priceText.setText(String.format("%.2f €", price));
-
-                                                    if (quantityUnity > 0 && price != null) {
-                                                        double unitPrice = price / quantityUnity;
-                                                        unitPriceText.setText(String.format("%.2f € / %s", unitPrice, unit));
-                                                        unitPriceText.setVisibility(View.VISIBLE);
-                                                    } else {
-                                                        unitPriceText.setText("N/A");
-                                                    }
-                                                    Log.d("DEBUG", "price: " + price);
-
-                                                    if ("Mercadona".equalsIgnoreCase(supermarketName)) {
-                                                        logo.setImageResource(R.drawable.mercadona);
-                                                    } else if ("Dia".equalsIgnoreCase(supermarketName)) {
-                                                        logo.setImageResource(R.drawable.dia_logo);
-                                                    } else {
-                                                        logo.setImageResource(R.drawable.alcampo);
+                                                    // Actualizamos el mínimo global si hace falta
+                                                    if (price < minPrice[0]) {
+                                                        minPrice[0] = price;
                                                     }
 
-                                                    container.addView(item);
+                                                    // Inflamos el ítem de la lista
+                                                    View item = LayoutInflater.from(this)
+                                                            .inflate(R.layout.item_supermarket_info, supermarketListContainer, false);
+
+                                                    ImageView  logo       = item.findViewById(R.id.supermarketLogo);
+                                                    TextView   tvName     = item.findViewById(R.id.supermarketName);
+                                                    TextView   tvPrice    = item.findViewById(R.id.supermarketPrice);
+                                                    TextView   tvUnitPrice= item.findViewById(R.id.supermarketUnitPrice);
+                                                    ImageButton btnEdit   = item.findViewById(R.id.btnUpdateSuperPrice);
+
+                                                    tvName.setText(name);
+                                                    tvPrice.setText(String.format(Locale.getDefault(), "%.2f €", price));
+                                                    double qty = product.getQuantityUnity();
+                                                    String unit = product.getUnit() == null ? "" : product.getUnit();
+                                                    tvUnitPrice.setText(qty > 0
+                                                            ? String.format(Locale.getDefault(), "%.2f € / %s", price / qty, unit)
+                                                            : "N/A");
+
+                                                    // Logo según súper
+                                                    if ("Mercadona".equalsIgnoreCase(name))      logo.setImageResource(R.drawable.mercadona);
+                                                    else if ("Dia".equalsIgnoreCase(name))      logo.setImageResource(R.drawable.dia_logo);
+                                                    else                                        logo.setImageResource(R.drawable.alcampo);
+
+                                                    // Botón editar si es admin/mod
+                                                    if ("admin".equals(role) || "mod".equals(role)) {
+                                                        btnEdit.setVisibility(View.VISIBLE);
+                                                        btnEdit.setOnClickListener(v ->
+                                                                showUpdateDialog(name, psDocId, price)
+                                                        );
+                                                    }
+
+                                                    supermarketListContainer.addView(item);
+                                                }
+
+                                                // Cuando procesamos todos, actualizamos el "Desde"
+                                                if (processed[0] == total) {
+                                                    if (minPrice[0] != Double.MAX_VALUE) {
+                                                        minPriceLabel.setText(
+                                                                String.format(Locale.getDefault(), "%.2f €", minPrice[0])
+                                                        );
+                                                    } else {
+                                                        minPriceLabel.setText("Precio no disponible");
+                                                    }
                                                 }
                                             });
                                 });
                     }
                 });
     }
+
 
     private void loadPriceEvolution(Product product) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();

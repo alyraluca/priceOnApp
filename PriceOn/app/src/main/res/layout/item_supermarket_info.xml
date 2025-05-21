@@ -2,10 +2,12 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="horizontal"
     android:padding="8dp"
     android:gravity="center_vertical">
 
+    <!-- Logo -->
     <ImageView
         android:id="@+id/supermarketLogo"
         android:layout_width="40dp"
@@ -13,6 +15,7 @@
         android:layout_marginEnd="8dp"
         android:contentDescription="Logo" />
 
+    <!-- Nombre -->
     <TextView
         android:id="@+id/supermarketName"
         android:layout_width="0dp"
@@ -21,12 +24,14 @@
         android:textStyle="bold"
         android:textSize="16sp" />
 
+    <!-- Precio y unidad en vertical -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:gravity="end">
 
+        <!-- Precio -->
         <TextView
             android:id="@+id/supermarketPrice"
             android:layout_width="wrap_content"
@@ -35,6 +40,7 @@
             android:textColor="@android:color/holo_green_dark"
             android:textSize="16sp" />
 
+        <!-- Precio por unidad (si aplica) -->
         <TextView
             android:id="@+id/supermarketUnitPrice"
             android:layout_width="wrap_content"
@@ -42,4 +48,15 @@
             android:textColor="@android:color/darker_gray"
             android:textSize="14sp" />
     </LinearLayout>
+
+    <!-- Botón editar precio -->
+    <ImageButton
+        android:id="@+id/btnUpdateSuperPrice"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/money"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:visibility="gone"
+        app:tint="?attr/colorOnSurface" />
+
 </LinearLayout>

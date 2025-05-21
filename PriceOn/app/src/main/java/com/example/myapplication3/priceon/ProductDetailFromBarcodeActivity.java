@@ -307,7 +307,7 @@ public class ProductDetailFromBarcodeActivity extends AppCompatActivity {
                                                     // Solo actualizar el precio mínimo una vez todos estén procesados
                                                     if (processed[0] == total) {
                                                         if (minPrice[0] != Double.MAX_VALUE) {
-                                                            minPriceLabel.setText(String.format("Desde %.2f €", minPrice[0]));
+                                                            minPriceLabel.setText(String.format("%.2f €", minPrice[0]));
                                                         } else {
                                                             minPriceLabel.setText("Precio no disponible");
                                                         }
