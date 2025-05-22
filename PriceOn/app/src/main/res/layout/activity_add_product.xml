@@ -67,6 +67,24 @@
                     android:layout_height="wrap_content"/>
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- URL de la foto -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilPhotoUrl"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
+                android:hint="URL de la foto"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/tilProductName"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="16dp">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etPhotoUrl"
+                    android:inputType="textUri"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
             <!-- Marca -->
             <TextView
                 android:id="@+id/labelBrand"
@@ -74,12 +92,9 @@
                 android:text="Marca"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/tilProductName"
+                app:layout_constraintTop_toBottomOf="@id/tilPhotoUrl"
                 app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginTop="24dp"/>
-
-            <!-- … resto de campos … -->
-
 
             <Spinner
                 android:id="@+id/spinnerBrand"

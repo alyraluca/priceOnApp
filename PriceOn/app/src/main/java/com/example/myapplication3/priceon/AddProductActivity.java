@@ -1,5 +1,6 @@
 package com.example.myapplication3.priceon;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.ArrayAdapter;
@@ -9,6 +10,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.Timestamp;
@@ -36,7 +38,9 @@ public class AddProductActivity extends AppCompatActivity {
     private List<Brands>    brandsList;
     private List<ProductTypes> typesList;
     private List<Supermarkets> supsList;
-
+    private TextInputLayout     tilPhotoUrl;
+    private TextInputEditText   etPhotoUrl;
+    private BottomNavigationView bottomNavigationView;
     private FirebaseFirestore db;
 
     @Override
@@ -69,12 +73,30 @@ public class AddProductActivity extends AppCompatActivity {
         tilInitialPrice   = findViewById(R.id.tilInitPrice);
         etInitialPrice    = findViewById(R.id.etInitialPrice);
         btnSave           = findViewById(R.id.btnSaveProduct);
+        tilPhotoUrl = findViewById(R.id.tilPhotoUrl);
+        etPhotoUrl  = findViewById(R.id.etPhotoUrl);
+        bottomNavigationView = findViewById(R.id.bottomNavigationBar);
 
         loadBrands();
         loadProductTypes();
         loadSupermarkets();
 
         btnSave.setOnClickListener(v -> saveProduct());
+
+        bottomNavigationView = findViewById(R.id.bottomNavigationBar);
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.navigation_home) {
+                return true;
+            } else if (id == R.id.navigation_scan) {
+                startActivity(new Intent(this, BarcodeScannerActivity.class));
+                return true;
+            } else if (id == R.id.navigation_favorites) {
+                startActivity(new Intent(this, FavoritesActivity.class));
+                return true;
+            }
+            return false;
+        });
     }
 
     private void loadBrands() {
@@ -137,7 +159,9 @@ public class AddProductActivity extends AppCompatActivity {
         prod.put("quantityPack",  Double.parseDouble(etQtyPack.getText().toString().trim()));
         prod.put("quantityUnity", Double.parseDouble(etQtyUnity.getText().toString().trim()));
         prod.put("unit",          etUnit   .getText().toString().trim());
-        prod.put("photoUrl",      "");
+        String url = etPhotoUrl.getText().toString().trim();
+        prod.put("photoUrl", url);
+
         // 1) guardo en products
         db.collection("products")
                 .add(prod)

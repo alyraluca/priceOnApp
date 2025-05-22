@@ -70,6 +70,21 @@ public class HomeActivity extends AppCompatActivity {
             return true;
         });
 
+        bottomNavigationView = findViewById(R.id.bottomNavigationBar);
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.navigation_home) {
+                return true;
+            } else if (id == R.id.navigation_scan) {
+                startActivity(new Intent(this, BarcodeScannerActivity.class));
+                return true;
+            } else if (id == R.id.navigation_favorites) {
+                startActivity(new Intent(this, FavoritesActivity.class));
+                return true;
+            }
+            return false;
+        });
+
     }
 
     @Override
