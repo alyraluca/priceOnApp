@@ -7,12 +7,14 @@ import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.myapplication3.priceon.AddProductActivity;
 import com.example.myapplication3.priceon.BarcodeScannerActivity;
 import com.example.myapplication3.priceon.FavoritesActivity;
 import com.example.myapplication3.priceon.ProfileActivity;
@@ -50,40 +52,6 @@ public class HomeActivity extends AppCompatActivity {
 
         MaterialToolbar topAppBar = findViewById(R.id.topAppBar);
         setSupportActionBar(topAppBar);
-        topAppBar.setOnMenuItemClickListener(item -> {
-            if (item.getItemId() == R.id.action_profile) {
-                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-
-                if (currentUser != null) {
-                    startActivity(new Intent(this, ProfileActivity.class));
-                } else {
-                    Intent intent = new Intent(this, MainActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
-                    finish();
-                }
-
-                return true;
-            }
-            return false;
-        });
-
-
-        bottomNavigationView.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.navigation_home) {
-                return true;
-            } else if (id == R.id.navigation_scan) {
-                Intent intent = new Intent(this, BarcodeScannerActivity.class);
-                startActivity(intent);
-                return true;
-            } else if (id == R.id.navigation_favorites) {
-                startActivity(new Intent(this, FavoritesActivity.class));
-                return true;
-            }
-            return false;
-        });
-
 
         searchEditText = findViewById(R.id.searchEditText);
         recyclerView = findViewById(R.id.contentRecyclerView);
@@ -103,6 +71,51 @@ public class HomeActivity extends AppCompatActivity {
         });
 
     }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.action_add) {
+            FirebaseUser u = FirebaseAuth.getInstance().getCurrentUser();
+            if (u == null) {
+                Toast.makeText(this, "Necesitas estar logueado", Toast.LENGTH_SHORT).show();
+            } else {
+                FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(u.getUid())
+                        .get()
+                        .addOnSuccessListener(doc -> {
+                            String role = doc.getString("role");
+                            if ("admin".equals(role)) {
+                                startActivity(new Intent(this, AddProductActivity.class));
+                            } else {
+                                Toast.makeText(this,
+                                        "Necesitas ser administrador para añadir productos",
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        });
+            }
+            return true;
+        }
+        else if (id == R.id.action_profile) {
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            Intent intent;
+            if (currentUser != null) {
+                intent = new Intent(this, ProfileActivity.class);
+            } else {
+                intent = new Intent(this, MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            }
+            startActivity(intent);
+            if (currentUser == null) finish();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

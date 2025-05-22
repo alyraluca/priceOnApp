@@ -54,9 +54,10 @@
         android:id="@+id/btnUpdateSuperPrice"
         android:layout_width="24dp"
         android:layout_height="24dp"
-        android:src="@drawable/money"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/heart"
         android:visibility="gone"
-        app:tint="?attr/colorOnSurface" />
+        app:tint="?attr/colorOnSurface"
+        android:background="?attr/selectableItemBackgroundBorderless"/>
+
 
 </LinearLayout>
