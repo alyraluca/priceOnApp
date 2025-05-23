@@ -6,6 +6,7 @@ import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -29,6 +30,7 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -142,12 +144,10 @@ public class ProductDetailActivity extends AppCompatActivity {
             db.collection("users").document(uid).get()
                     .addOnSuccessListener(doc -> {
                         role = doc.getString("role");
-                        // Una vez tenemos rol, cargamos lista de supermercados
                         loadSupermarkets();
                     });
         } else {
-            // Sin usuario logueado, ocultamos corazón y cargamos supermercados sin botón
-            favoriteIcon.setVisibility(View.GONE);
+            role = null;
             loadSupermarkets();
         }
 
@@ -161,68 +161,64 @@ public class ProductDetailActivity extends AppCompatActivity {
         }
 
         loadPriceEvolution(product);
+
     }
 
 
-    private void showUpdateDialog(String supermarketName, String psDocId, double oldPrice) {
-        // 1) Creamos el EditText y lo configuramos
-        final EditText input = new androidx.appcompat.widget.AppCompatEditText(this);
-        input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        input.setText(String.format(Locale.getDefault(), "%.2f", oldPrice));
-        input.setSelection(input.getText().length()); // opcional: coloca el cursor al final
+    private void showCustomUpdateDialog(
+            String supermarketName,
+            String psDocId,
+            double oldPrice
+    ) {
+        View custom = LayoutInflater.from(this)
+                .inflate(R.layout.dialog_update_price, null, false);
 
-        // 2) Construimos el diálogo y le pasamos el input directamente
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Actualizar precio")
-                .setMessage("Producto: " + product.getName() +
-                        "\nSupermercado: " + supermarketName)
-                .setView(input)  // aquí va nuestro EditText
-                .setPositiveButton("Guardar", null)   // listener lo añadimos después
-                .setNegativeButton("Cancelar", (d, which) -> d.dismiss())
+        TextView title         = custom.findViewById(R.id.dialogTitle);
+        TextInputEditText input= custom.findViewById(R.id.etNewPrice);
+        Button btnSave         = custom.findViewById(R.id.btnSave);
+        Button btnCancel       = custom.findViewById(R.id.btnCancel);
+
+        title.setText("Super: " + supermarketName);
+        input.setText(String.format(Locale.getDefault(),"%.2f", oldPrice));
+
+        AlertDialog dlg = new AlertDialog.Builder(this)
+                .setView(custom)
                 .create();
 
-        dialog.setOnShowListener(d -> {
-            // 3) Capturamos el botón POSITIVO para controlar validación
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-                    .setOnClickListener(v -> {
-                        String text = input.getText().toString().trim();
-                        if (text.isEmpty()) {
-                            input.setError("Introduce un precio");
-                            return;
-                        }
-                        double newPrice;
-                        try {
-                            newPrice = Double.parseDouble(text);
-                        } catch (NumberFormatException e) {
-                            input.setError("Formato inválido");
-                            return;
-                        }
-                        if (Math.abs(newPrice - oldPrice) > oldPrice * 0.3) {
-                            input.setError("Cambio demasiado grande");
-                            return;
-                        }
+        btnCancel.setOnClickListener(v -> dlg.dismiss());
+        btnSave  .setOnClickListener(v -> {
+            String txt = input.getText().toString().trim();
+            if (txt.isEmpty()) {
+                input.setError("Introduce un precio"); return;
+            }
+            double np;
+            try { np = Double.parseDouble(txt); }
+            catch(NumberFormatException e){
+                input.setError("Formato inválido"); return;
+            }
+            Map<String,Object> data = new HashMap<>();
+            data.put("price", np);
+            data.put("lastPriceUpdate", Timestamp.now());
 
-                        // 4) Guardamos en Firestore
-                        Map<String,Object> data = new HashMap<>();
-                        data.put("price", newPrice);
-                        data.put("lastPriceUpdate", Timestamp.now());
-
-                        db.collection("productSupermarket")
-                                .document(psDocId)
-                                .collection("priceUpdate")
-                                .add(data)
-                                .addOnSuccessListener(r -> {
-                                    Toast.makeText(this,"Precio actualizado",Toast.LENGTH_SHORT).show();
-                                    dialog.dismiss();
-                                    loadSupermarkets();  // refrescamos la lista
-                                })
-                                .addOnFailureListener(e -> {
-                                    Toast.makeText(this,"Error al actualizar",Toast.LENGTH_SHORT).show();
-                                });
-                    });
+            db.collection("productSupermarket")
+                    .document(psDocId)
+                    .collection("priceUpdate")
+                    .add(data)
+                    .addOnSuccessListener(r -> {
+                        Toast.makeText(this,
+                                "Precio actualizado", Toast.LENGTH_SHORT
+                        ).show();
+                        dlg.dismiss();
+                        loadSupermarkets();
+                    })
+                    .addOnFailureListener(e ->
+                            Toast.makeText(this,
+                                    "Error al actualizar", Toast.LENGTH_SHORT
+                            ).show()
+                    );
         });
 
-        dialog.show();
+        dlg.show();
     }
 
 
@@ -333,6 +329,8 @@ public class ProductDetailActivity extends AppCompatActivity {
                                                     TextView   tvUnitPrice= item.findViewById(R.id.supermarketUnitPrice);
                                                     ImageButton btnEdit   = item.findViewById(R.id.btnUpdateSuperPrice);
 
+                                                    btnEdit.setImageResource(R.drawable.actualizar);
+
                                                     tvName.setText(name);
                                                     tvPrice.setText(String.format(Locale.getDefault(), "%.2f €", price));
                                                     double qty = product.getQuantityUnity();
@@ -346,11 +344,23 @@ public class ProductDetailActivity extends AppCompatActivity {
                                                     else if ("Dia".equalsIgnoreCase(name))      logo.setImageResource(R.drawable.dia_logo);
                                                     else                                        logo.setImageResource(R.drawable.alcampo);
 
+                                                    btnEdit.setVisibility(View.VISIBLE);
+                                                    btnEdit.setEnabled(false);
+                                                    btnEdit.setAlpha(0.4f);
+
                                                     // Botón editar si es admin/mod
                                                     if ("admin".equals(role) || "mod".equals(role)) {
-                                                        btnEdit.setVisibility(View.VISIBLE);
+                                                        btnEdit.setEnabled(true);
+                                                        btnEdit.setAlpha(1f);
                                                         btnEdit.setOnClickListener(v ->
-                                                                showUpdateDialog(name, psDocId, price)
+                                                                showCustomUpdateDialog(name, psDocId, price)
+                                                        );
+                                                    } else {
+                                                        btnEdit.setOnClickListener(v ->
+                                                                Toast.makeText(this,
+                                                                        "Necesitas permisos para actualizar precio",
+                                                                        Toast.LENGTH_SHORT
+                                                                ).show()
                                                         );
                                                     }
 
