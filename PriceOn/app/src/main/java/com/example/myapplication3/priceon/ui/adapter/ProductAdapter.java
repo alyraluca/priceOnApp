@@ -20,12 +20,12 @@ import java.util.List;
 
 public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductViewHolder>{
     private List<Product> products;
-    private final OnProductClickListener listener;
+    private OnProductClickListener listener;
 
 
-    public ProductAdapter(List<Product> productos, OnProductClickListener l) {
+    public ProductAdapter(List<Product> productos, OnProductClickListener listener) {
         this.products = productos;
-        this.listener = l;
+        this.listener = listener;
     }
 
     @NonNull
@@ -42,19 +42,31 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
         holder.nameText.setText(product.getName());
 
-        String brandName = (product.getBrandName() != null) ? product.getBrandName() : "Desconocida";
-        holder.brandText.setText(brandName);
+        //String brandName = (product.getBrandName() != null) ? product.getBrandName() : "Desconocida";
+        holder.brandText.setText(
+                product.getBrandName()!=null ? product.getBrandName() : "Desconocida"
+        );
 
-        String precioTexto = product.getMinPrice() > 0 ? product.getMinPrice() + " €" : "Precio no disponible";
-        holder.priceText.setText(precioTexto);
+        //String precioTexto = product.getMinPrice() > 0 ? product.getMinPrice() + " €" : "Precio no disponible";
+        holder.priceText.setText(
+                product.getMinPrice()>0
+                        ? product.getMinPrice()+" €"
+                        : ""
+        );
 
-        holder.pricePerUnitText.setText(product.getPricePerUnit() + " € / " + product.getUnit());
+        //holder.pricePerUnitText.setText(product.getPricePerUnit() + " € / " + product.getUnit());
 
-        String quantity = "";
-        if (product.getQuantityPack() > 0 && product.getQuantityUnity() > 0 && product.getUnit() != null) {
-            quantity = product.getQuantityPack() + " x " + product.getQuantityUnity() + " " + product.getUnit();
+        String pricePerUnit = product.getPricePerUnit();
+        if (!pricePerUnit.equals("-")) {
+            holder.pricePerUnitText.setText(pricePerUnit + " € / " + product.getUnit());
+        } else {
+            holder.pricePerUnitText.setText("");
         }
-        holder.quantityText.setText(quantity);
+
+        String qty = (product.getQuantityPack()>0 && product.getQuantityUnity()>0)
+                ? product.getQuantityPack()+" x "+product.getQuantityUnity()+" "+product.getUnit()
+                : "";
+        holder.quantityText.setText(qty);
 
         Glide.with(holder.itemView.getContext())
                 .load(product.getPhotoUrl())
@@ -66,34 +78,17 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         holder.supermarketLogoContainer.removeAllViews();
         for (String logoUrl : product.getSupermarketLogoUrls()) {
             ImageView logo = new ImageView(holder.itemView.getContext());
-
-            // Convertir 48dp a px
-            int sizeInDp = 38;
-            float scale = holder.itemView.getContext().getResources().getDisplayMetrics().density;
-            int sizeInPx = (int) (sizeInDp * scale + 0.5f);
-
-            // Convertir margen 8dp a px
-            int marginInDp = 8;
-            int marginInPx = (int) (marginInDp * scale + 0.5f);
-
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(sizeInPx, sizeInPx);
-            params.setMargins(marginInPx, 0, marginInPx, 0);
-            logo.setLayoutParams(params);
-
-            Glide.with(holder.itemView.getContext())
-                    .load(logoUrl)
-                    .into(logo);
-
+            int dp = (int)(38 * holder.itemView.getContext()
+                    .getResources().getDisplayMetrics().density + .5f);
+            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(dp, dp);
+            int m = (int)(8 * holder.itemView.getContext()
+                    .getResources().getDisplayMetrics().density + .5f);
+            p.setMargins(m,0,m,0);
+            logo.setLayoutParams(p);
+            Glide.with(holder.itemView.getContext()).load(logoUrl).into(logo);
             holder.supermarketLogoContainer.addView(logo);
-
-            holder.itemView.setOnClickListener(v -> {
-                Intent intent = new Intent(v.getContext(), ProductDetailActivity.class);
-                intent.putExtra("product", product);
-                v.getContext().startActivity(intent);
-            });
-
-
         }
+
         holder.itemView.setOnClickListener(v -> listener.onProductClick(product));
 
     }

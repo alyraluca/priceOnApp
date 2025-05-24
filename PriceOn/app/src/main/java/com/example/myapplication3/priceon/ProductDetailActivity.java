@@ -102,6 +102,21 @@ public class ProductDetailActivity extends AppCompatActivity {
                 .load(product.getPhotoUrl())
                 .into(productImage);
 
+        // **Aquí** cargamos la marca si todavía no la tenemos:
+        if (product.getBrandName() == null && product.getBrandId() != null) {
+            FirebaseFirestore.getInstance()
+                    .collection("brands")
+                    .document(product.getBrandId())
+                    .get()
+                    .addOnSuccessListener(brandDoc -> {
+                        String brand = brandDoc.getString("name");
+                        productBrand.setText(brand != null ? brand : "Marca desconocida");
+                    })
+                    .addOnFailureListener(e -> productBrand.setText("Marca no disponible"));
+        } else {
+            productBrand.setText(product.getBrandName());
+        }
+
         // 5) Configura la barra superior
         topAppBar.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == R.id.action_profile) {

@@ -66,12 +66,33 @@ public class HomeActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         labelSearchHistory = findViewById(R.id.labelSearchHistory);
         recyclerView.setAdapter(adapter);
+        historyRv = findViewById(R.id.historyRecyclerView);
 
         db = FirebaseFirestore.getInstance();
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         uid = user != null ? user.getUid() : null;
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        if (uid == null) {
+            // Sin usuario: mostramos mensaje y ocultamos la lista
+            labelSearchHistory.setText("");
+            historyRv.setVisibility(View.GONE);
+        } else {
+            // Usuario logueado: inicializamos el RecyclerView y cargamos el historial
+            labelSearchHistory.setText("Últimas búsquedas");
+            historyRv.setVisibility(View.VISIBLE);
+
+            historyRv.setLayoutManager(
+                    new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
+            );
+            historyAdapter = new ProductAdapter(historyList, p -> {
+                // para el historial sólo abrimos detalle
+                startDetail(p);
+            });
+            historyRv.setAdapter(historyAdapter);
+            loadSearchHistory();
+        }
 
         adapter = new ProductAdapter(
                 productList,
@@ -113,17 +134,17 @@ public class HomeActivity extends AppCompatActivity {
         });
 
 
-        // Historial horizontal
-        historyRv = findViewById(R.id.historyRecyclerView);
-        historyRv.setLayoutManager(
-                new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        );
-        historyAdapter = new ProductAdapter(historyList, p->{
-            // para el historial sólo abrimos detalle
-            startDetail(p);
-        });
-        historyRv.setAdapter(historyAdapter);
-        loadSearchHistory();
+//        // Historial horizontal
+//        historyRv = findViewById(R.id.historyRecyclerView);
+//        historyRv.setLayoutManager(
+//                new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
+//        );
+//        historyAdapter = new ProductAdapter(historyList, p->{
+//            // para el historial sólo abrimos detalle
+//            startDetail(p);
+//        });
+//        historyRv.setAdapter(historyAdapter);
+//        loadSearchHistory();
 
         adapter = new ProductAdapter(productList, p-> {
             // sólo cuando hay texto en el buscador guardamos en searchHistory
@@ -207,27 +228,53 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void loadSearchHistory() {
-        if (uid==null) return;
         historyList.clear();
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) return;
+
         db.collection("users")
                 .document(uid)
                 .collection("searchHistory")
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .limit(5)
-                .get().addOnSuccessListener(snap -> {
-                    for (var hs: snap) {
+                .get()
+                .addOnSuccessListener(snap -> {
+                    for (DocumentSnapshot hs : snap) {
                         String pid = hs.getString("productId");
+                        // 1) traigo el doc product
                         db.collection("products").document(pid)
-                                .get().addOnSuccessListener(pd -> {
+                                .get()
+                                .addOnSuccessListener(pd -> {
                                     Product p = pd.toObject(Product.class);
-                                    if (p!=null) {
-                                        p.setId(pd.getId());
-                                        historyList.add(p);
-                                        historyAdapter.notifyDataSetChanged();
-                                    }
+                                    if (p == null) return;
+                                    p.setId(pd.getId());
+                                    // 2) cargo la marca
+                                    loadProductBrand(p, () -> {
+                                        // 3) cargo precios y logos, y sólo al final añado al historial
+                                        loadPricesAndSupermarkets(p, () -> {
+                                            historyList.add(p);
+                                            historyAdapter.notifyDataSetChanged();
+                                        });
+                                    });
                                 });
                     }
                 });
+    }
+
+
+    private void loadProductBrand(Product product, Runnable onDone) {
+        if (product.getBrandId() == null) {
+            onDone.run();
+            return;
+        }
+        db.collection("brands")
+                .document(product.getBrandId())
+                .get()
+                .addOnSuccessListener(brandDoc -> {
+                    product.setBrandName(brandDoc.getString("name"));
+                    onDone.run();
+                })
+                .addOnFailureListener(e -> onDone.run());
     }
 
     @Override
@@ -239,32 +286,48 @@ public class HomeActivity extends AppCompatActivity {
 
     private void searchProducts(String searchText) {
         if (searchText.isEmpty()) {
+            // Si borras el texto, restauramos la vista de historial
+            labelSearchHistory.setVisibility(View.VISIBLE);
+            historyRv.setVisibility(View.VISIBLE);
+
             productList.clear();
             adapter.notifyDataSetChanged();
             return;
         }
+
+        // Ya sabemos que queremos resultados de búsqueda: ocultamos el historial
+        labelSearchHistory.setVisibility(View.GONE);
+        historyRv.setVisibility(View.GONE);
+
         db.collection("products")
                 .orderBy("name")
                 .startAt(searchText)
                 .endAt(searchText + "\uf8ff")
                 .get()
                 .addOnSuccessListener(productSnapshots -> {
+                    // Vaciamos la lista para los nuevos resultados
                     productList.clear();
+                    adapter.notifyDataSetChanged();  // limpia la RecyclerView
 
                     for (DocumentSnapshot doc : productSnapshots.getDocuments()) {
-                        Product product = doc.toObject(Product.class);
-                        if (product == null) continue;
-                        product.setId(doc.getId());
+                        Product p = doc.toObject(Product.class);
+                        if (p == null) continue;
+                        p.setId(doc.getId());
 
-                        loadProductBrand(product);
-                        loadPricesAndSupermarkets(product);
-
-                        productList.add(product);
+                        // Cadena de callbacks: marca → precios/logos → añadir a lista
+                        loadProductBrand(p, () -> {
+                            loadPricesAndSupermarkets(p, () -> {
+                                productList.add(p);
+                                adapter.notifyDataSetChanged();
+                            });
+                        });
                     }
-
-                    adapter.notifyDataSetChanged();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Error buscando productos", Toast.LENGTH_SHORT).show();
                 });
     }
+
 
     private void loadProductBrand(Product product) {
         if (product.getBrandId() == null) return;
@@ -279,59 +342,61 @@ public class HomeActivity extends AppCompatActivity {
                     }
                 });
     }
-    private void loadPricesAndSupermarkets(Product product) {
+
+    private void loadPricesAndSupermarkets(Product product, Runnable onDone) {
         db.collection("productSupermarket")
                 .whereEqualTo("productId", product.getId())
                 .get()
                 .addOnSuccessListener(productSuperDocs -> {
-                    if (productSuperDocs.isEmpty()) return;
+                    if (productSuperDocs.isEmpty()) {
+                        onDone.run();
+                        return;
+                    }
 
-                    AtomicInteger docsProcessed = new AtomicInteger(0);
-                    int totalDocs = productSuperDocs.size();
-                    double[] min = {Double.MAX_VALUE};
-                    String[] cheapestSuperId = {null};
+                    AtomicInteger processed = new AtomicInteger(0);
+                    double[] min = { Double.MAX_VALUE };
+                    String[] cheapestSuperId = { null };
 
                     for (DocumentSnapshot superDoc : productSuperDocs) {
-                        String superDocId = superDoc.getId();
+                        String psId = superDoc.getId();
                         String supermarketId = superDoc.getString("supermarketId");
 
                         db.collection("productSupermarket")
-                                .document(superDocId)
+                                .document(psId)
                                 .collection("priceUpdate")
                                 .orderBy("lastPriceUpdate", Query.Direction.DESCENDING)
                                 .limit(1)
                                 .get()
-                                .addOnSuccessListener(priceUpdates -> {
-                                    for (DocumentSnapshot priceDoc : priceUpdates) {
-                                        Double price = priceDoc.getDouble("price");
+                                .addOnSuccessListener(priceDocs -> {
+                                    for (DocumentSnapshot pd : priceDocs) {
+                                        Double price = pd.getDouble("price");
                                         if (price != null && price < min[0]) {
                                             min[0] = price;
                                             cheapestSuperId[0] = supermarketId;
                                         }
                                     }
-
                                     db.collection("supermarkets")
                                             .document(supermarketId)
                                             .get()
-                                            .addOnSuccessListener(superDocFull -> {
-                                                if (superDocFull.exists()) {
-                                                    String logoUrl = superDocFull.getString("logoUrl");
-                                                    if (logoUrl != null) {
-                                                        product.addSupermarketLogoUrl(logoUrl);
-                                                    }
-                                                }
+                                            .addOnSuccessListener(sDoc -> {
+                                                String logoUrl = sDoc.getString("logoUrl");
+                                                if (logoUrl != null) product.addSupermarketLogoUrl(logoUrl);
 
-                                                if (docsProcessed.incrementAndGet() == totalDocs) {
+                                                if (processed.incrementAndGet() == productSuperDocs.size()) {
                                                     if (min[0] < Double.MAX_VALUE) {
                                                         product.setMinPrice(min[0]);
                                                         product.setCheapestSupermarketId(cheapestSuperId[0]);
                                                     }
-                                                    adapter.notifyDataSetChanged();
+                                                    onDone.run();
                                                 }
                                             });
                                 });
                     }
+                })
+                .addOnFailureListener(e -> {
+                    onDone.run();
                 });
     }
+
 
 }
