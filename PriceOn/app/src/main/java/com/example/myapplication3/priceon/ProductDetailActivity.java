@@ -342,7 +342,7 @@ public class ProductDetailActivity extends AppCompatActivity {
                                                     TextView   tvName     = item.findViewById(R.id.supermarketName);
                                                     TextView   tvPrice    = item.findViewById(R.id.supermarketPrice);
                                                     TextView   tvUnitPrice= item.findViewById(R.id.supermarketUnitPrice);
-                                                    ImageButton btnEdit   = item.findViewById(R.id.btnUpdateSuperPrice);
+                                                    ImageView btnEdit   = item.findViewById(R.id.btnUpdateSuperPrice);
 
                                                     //btnEdit.setImageResource(R.drawable.actualizar);
 
