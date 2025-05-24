@@ -2,19 +2,15 @@ package com.example.myapplication3.priceon;
 
 import android.content.Intent;
 import android.os.Bundle;
-
-import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.myapplication3.priceon.data.model.Product;
 import com.example.myapplication3.priceon.ui.HomeActivity;
-import com.example.myapplication3.priceon.ui.MainActivity;
-import com.example.myapplication3.priceon.ui.adapter.FavoritesAdapter;
+import com.example.myapplication3.priceon.ui.*;
+import com.example.myapplication3.priceon.ui.adapter.ProductAdapter;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
@@ -31,7 +27,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class FavoritesActivity extends AppCompatActivity {
 
     private RecyclerView favoritesRecycler;
-    private FavoritesAdapter adapter;
+    private ProductAdapter adapter;
+    private List<Product> favoritesList = new ArrayList<>();
+
     private FirebaseFirestore db;
     private String uid;
     private BottomNavigationView bottomNavigationView;
@@ -42,14 +40,30 @@ public class FavoritesActivity extends AppCompatActivity {
         setContentView(R.layout.activity_favorites);
 
         db = FirebaseFirestore.getInstance();
-        uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        bottomNavigationView = findViewById(R.id.bottomNavigationBar);
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        uid = user != null ? user.getUid() : null;
+
+        // Toolbar
+        MaterialToolbar topAppBar = findViewById(R.id.topAppBar);
+        setSupportActionBar(topAppBar);
+        topAppBar.setTitle("Favoritos");
+
+        // RecyclerView + Adapter
         favoritesRecycler = findViewById(R.id.favoritesRecycler);
         favoritesRecycler.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new FavoritesAdapter(this, new ArrayList<>());
+        adapter = new ProductAdapter(
+                favoritesList,
+                product -> {
+                    // Al hacer click abrimos detalle igual que en HomeActivity
+                    Intent it = new Intent(this, ProductDetailActivity.class);
+                    it.putExtra("product", product);
+                    startActivity(it);
+                }
+        );
         favoritesRecycler.setAdapter(adapter);
 
-
+        // BottomNavigation
+        bottomNavigationView = findViewById(R.id.bottomNavigationBar);
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.navigation_home) {
@@ -65,26 +79,9 @@ public class FavoritesActivity extends AppCompatActivity {
             return false;
         });
 
-        MaterialToolbar topAppBar = findViewById(R.id.topAppBar);
-        topAppBar.setOnMenuItemClickListener(item -> {
-            if (item.getItemId() == R.id.action_profile) {
-                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-
-                if (currentUser != null) {
-                    startActivity(new Intent(this, ProfileActivity.class));
-                } else {
-                    Intent intent = new Intent(this, MainActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
-                    finish(); // Cierra HomeActivity para que no pueda volver con el botón atrás
-                }
-
-                return true;
-            }
-            return false;
-        });
-
-        loadFavorites();
+        if (uid != null) {
+            loadFavorites();
+        }
     }
 
     private void loadFavorites() {
@@ -95,7 +92,8 @@ public class FavoritesActivity extends AppCompatActivity {
                 .addOnSuccessListener(query -> {
                     List<String> ids = new ArrayList<>();
                     for (DocumentSnapshot doc : query) {
-                        ids.add(doc.getString("productId"));
+                        String pid = doc.getString("productId");
+                        if (pid != null) ids.add(pid);
                     }
                     fetchProducts(ids);
                 });
@@ -103,18 +101,20 @@ public class FavoritesActivity extends AppCompatActivity {
 
     private void fetchProducts(List<String> ids) {
         if (ids.isEmpty()) return;
+
         db.collection("products")
                 .whereIn(FieldPath.documentId(), ids)
                 .get()
                 .addOnSuccessListener(query -> {
-                    List<Product> favorites = new ArrayList<>();
+                    List<Product> list = new ArrayList<>();
                     for (DocumentSnapshot doc : query) {
                         Product p = doc.toObject(Product.class);
-                        p.setId(doc.getId());
-                        favorites.add(p);
+                        if (p != null) {
+                            p.setId(doc.getId());
+                            list.add(p);
+                        }
                     }
-                    // Ahora calculamos el precio mínimo de cada uno:
-                    calculateMinPrices(favorites);
+                    calculateMinPrices(list);
                 });
     }
 
@@ -125,39 +125,110 @@ public class FavoritesActivity extends AppCompatActivity {
                     .whereEqualTo("productId", p.getId())
                     .get()
                     .addOnSuccessListener(snaps -> {
-                        final double[] min = {Double.MAX_VALUE};
-                        for (DocumentSnapshot superDoc : snaps) {
-                            String psId = superDoc.getId();
-                            // obtenemos el último precio
-                            db.collection("productSupermarket")
-                                    .document(psId)
-                                    .collection("priceUpdate")
-                                    .orderBy("lastPriceUpdate", Query.Direction.DESCENDING)
-                                    .limit(1)
-                                    .get()
-                                    .addOnSuccessListener(priceSnaps -> {
-                                        for (DocumentSnapshot priceDoc : priceSnaps) {
-                                            Double price = priceDoc.getDouble("price");
-                                            if (price != null && price < min[0]) min[0] = price;
-                                        }
-                                        // si hemos encontrado uno
-                                        if (min[0] < Double.MAX_VALUE) {
-                                            p.setMinPrice(min[0]);
-                                        } else {
-                                            p.setMinPrice(0.0); // o marca N/A
-                                        }
-                                        if (processed.incrementAndGet() == list.size()) {
-                                            // todos procesados
-                                            adapter.setItems(list);
-                                        }
-                                    });
-                        }
-                        // si no había supermercados:
-                        if (snaps.isEmpty() && processed.incrementAndGet() == list.size()) {
-                            adapter.setItems(list);
+                        if (snaps.isEmpty()) {
+                            p.setMinPrice(0.0);
+                            afterPriceLoaded(p, list, processed);
+                        } else {
+                            final double[] min = { Double.MAX_VALUE };
+                            AtomicInteger innerProcessed = new AtomicInteger(0);
+                            for (DocumentSnapshot superDoc : snaps) {
+                                String psId = superDoc.getId();
+                                String supId = superDoc.getString("supermarketId");
+                                db.collection("productSupermarket")
+                                        .document(psId)
+                                        .collection("priceUpdate")
+                                        .orderBy("lastPriceUpdate", Query.Direction.DESCENDING)
+                                        .limit(1)
+                                        .get()
+                                        .addOnSuccessListener(priceSnaps -> {
+                                            for (DocumentSnapshot priceDoc : priceSnaps) {
+                                                Double price = priceDoc.getDouble("price");
+                                                if (price != null && price < min[0]) {
+                                                    min[0] = price;
+                                                }
+                                            }
+                                            if (innerProcessed.incrementAndGet() == snaps.size()) {
+                                                p.setMinPrice(min[0] < Double.MAX_VALUE ? min[0] : 0.0);
+                                                afterPriceLoaded(p, list, processed);
+                                            }
+                                        });
+                            }
                         }
                     });
         }
     }
 
+    private void afterPriceLoaded(Product p, List<Product> list, AtomicInteger processed) {
+        // Una vez tenemos precio, cargamos marca y logos
+        loadProductBrand(p, () ->
+                loadPricesAndSupermarkets(p, () -> {
+                    // Añadimos a la lista final y notificamos cuando todos estén
+                    favoritesList.add(p);
+                    if (processed.incrementAndGet() == list.size()) {
+                        adapter.notifyDataSetChanged();
+                    }
+                })
+        );
+    }
+
+    private void loadProductBrand(Product product, Runnable onDone) {
+        if (product.getBrandId() == null) {
+            onDone.run();
+            return;
+        }
+        db.collection("brands")
+                .document(product.getBrandId())
+                .get()
+                .addOnSuccessListener(brandDoc -> {
+                    product.setBrandName(brandDoc.getString("name"));
+                    onDone.run();
+                })
+                .addOnFailureListener(e -> onDone.run());
+    }
+
+    private void loadPricesAndSupermarkets(Product product, Runnable onDone) {
+        db.collection("productSupermarket")
+                .whereEqualTo("productId", product.getId())
+                .get()
+                .addOnSuccessListener(productSuperDocs -> {
+                    if (productSuperDocs.isEmpty()) {
+                        onDone.run();
+                        return;
+                    }
+                    AtomicInteger done = new AtomicInteger(0);
+                    for (DocumentSnapshot superDoc : productSuperDocs) {
+                        String psId = superDoc.getId();
+                        String supId = superDoc.getString("supermarketId");
+
+                        db.collection("productSupermarket")
+                                .document(psId)
+                                .collection("priceUpdate")
+                                .orderBy("lastPriceUpdate", Query.Direction.DESCENDING)
+                                .limit(1)
+                                .get()
+                                .addOnSuccessListener(priceDocs -> {
+                                    for (DocumentSnapshot pd : priceDocs) {
+                                        Double price = pd.getDouble("price");
+                                        if (price != null && price < product.getMinPrice()) {
+                                            product.setMinPrice(price);
+                                        }
+                                    }
+                                    // Cargamos logo del supermercado
+                                    db.collection("supermarkets")
+                                            .document(supId)
+                                            .get()
+                                            .addOnSuccessListener(sDoc -> {
+                                                String logoUrl = sDoc.getString("logoUrl");
+                                                if (logoUrl != null) {
+                                                    product.addSupermarketLogoUrl(logoUrl);
+                                                }
+                                                if (done.incrementAndGet() == productSuperDocs.size()) {
+                                                    onDone.run();
+                                                }
+                                            });
+                                });
+                    }
+                })
+                .addOnFailureListener(e -> onDone.run());
+    }
 }

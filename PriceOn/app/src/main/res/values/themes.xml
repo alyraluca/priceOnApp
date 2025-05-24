@@ -4,7 +4,6 @@
         <item name="colorPrimary">@color/my_light_primary</item>
         <item name="colorOnPrimary">@color/white</item>
         <item name="colorPrimaryVariant">@color/my_light_primary_variant</item> <!-- Or colorPrimaryDark for Material 1 -->
-        <!-- Secondary brand color. -->
         <item name="colorSecondary">@color/my_light_secondary</item>
         <item name="colorOnSecondary">@color/black</item>
         <item name="colorSecondaryVariant">@color/my_light_secondary_variant</item> <!-- Or colorAccent for Material 1 -->
@@ -15,6 +14,7 @@
         <!-- Customize your theme here. -->
         <item name="colorSurface">@color/my_light_surface</item>
         <item name="colorOnSurface">@color/my_light_on_surface</item>
+        <item name="bottomNavigationStyle">@style/Widget.App.BottomNavigationView</item>
 
         <!-- 2) FUENTE global: -->
         <item name="android:fontFamily">@font/roboto_regular</item>
@@ -26,20 +26,25 @@
     <style name="Theme.PriceOn" parent="Base.Theme.PriceOn" />
     <style name="Widget.App.BottomNavigationView" parent="Widget.MaterialComponents.BottomNavigationView">
         <item name="android:background">@color/my_dark_primary_variant</item>
-        <!-- Elevación -->
         <item name="elevation">8dp</item>
-        <!-- Color de iconos cuando está seleccionado / no seleccionado -->
         <item name="itemIconTint">@color/bottom_nav_icon_color_selector</item>
         <item name="itemTextColor">@color/bottom_nav_text_color_selector</item>
-        <!-- Siempre muestra etiqueta (LABEL_VISIBILITY_LABELED) o solo el seleccionado -->
         <item name="labelVisibilityMode">labeled</item>
-        <!-- Tamaño de icono -->
-        <item name="itemIconSize">32dp</item>
+        <item name="itemIconSize">36dp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
     </style>
 
     <style name="TextAppearance.App.Headline" parent="TextAppearance.MaterialComponents.Headline6">
         <item name="android:fontFamily">@font/roboto_medium</item>
         <item name="android:textColor">?attr/colorOnBackground</item>
     </style>
+
+    <style name="TextAppearance.App.ProductTitle" parent="TextAppearance.MaterialComponents.Subtitle2">
+        <item name="android:fontFamily">@font/roboto_medium</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
 
 </resources>

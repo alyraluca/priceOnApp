@@ -1,21 +1,27 @@
 package com.example.myapplication3.priceon.ui;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
+import com.bumptech.glide.Glide;
 import com.example.myapplication3.priceon.AddProductActivity;
 import com.example.myapplication3.priceon.BarcodeScannerActivity;
 import com.example.myapplication3.priceon.FavoritesActivity;
@@ -26,22 +32,23 @@ import com.example.myapplication3.priceon.data.model.Product;
 import com.example.myapplication3.priceon.ui.adapter.ProductAdapter;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.navigation.NavigationBarView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class HomeActivity extends AppCompatActivity {
     private EditText searchEditText;
-    private TextView labelSearchHistory;
+    private TextView labelSearchHistory, labelNearby;
     private RecyclerView recyclerView, historyRv;
     private ProductAdapter adapter, historyAdapter;
     private List<Product> productList = new ArrayList<>();
@@ -49,13 +56,14 @@ public class HomeActivity extends AppCompatActivity {
     private BottomNavigationView bottomNavigationView;
     private String uid;
     private List<Product> historyList = new ArrayList<>();
-
-
+    private LinearLayout nearbyContainer;
+    private static final int REQ_LOC = 42;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
+
         bottomNavigationView = findViewById(R.id.bottomNavigationBar);
 
         MaterialToolbar topAppBar = findViewById(R.id.topAppBar);
@@ -67,6 +75,8 @@ public class HomeActivity extends AppCompatActivity {
         labelSearchHistory = findViewById(R.id.labelSearchHistory);
         recyclerView.setAdapter(adapter);
         historyRv = findViewById(R.id.historyRecyclerView);
+        labelNearby        = findViewById(R.id.labelNearby);
+        nearbyContainer    = findViewById(R.id.nearbyContainer);
 
         db = FirebaseFirestore.getInstance();
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -114,37 +124,39 @@ public class HomeActivity extends AppCompatActivity {
                 }
         );
 
-        searchEditText.setOnEditorActionListener((v, actionId, event) -> {
-            String searchText = searchEditText.getText().toString().trim();
-            if (!searchText.isEmpty()) {
-                // ocultamos histórico
-                labelSearchHistory.setVisibility(View.GONE);
-                historyRv.setVisibility(View.GONE);
-
-                searchProducts(searchText);
-            } else {
-                // volvemos a mostrar histórico si el campo está vacío
-                labelSearchHistory.setVisibility(View.VISIBLE);
-                historyRv.setVisibility(View.VISIBLE);
-
+        // Búsqueda: hide/show historial y cercanos
+        searchEditText.setOnEditorActionListener((v, a, e) -> {
+            String txt = v.getText().toString().trim();
+            if (txt.isEmpty()) {
+                // Restaurar vistas
+                if (uid != null) {
+                    labelSearchHistory.setVisibility(View.VISIBLE);
+                    historyRv.setVisibility(View.VISIBLE);
+                }
+                labelNearby.setVisibility(View.VISIBLE);
+                findViewById(R.id.nearbyCard).setVisibility(View.VISIBLE);
                 productList.clear();
                 adapter.notifyDataSetChanged();
+            } else {
+                // Ocultar historial y cercanos
+                labelSearchHistory.setVisibility(View.GONE);
+                historyRv.setVisibility(View.GONE);
+                labelNearby.setVisibility(View.GONE);
+                findViewById(R.id.nearbyCard).setVisibility(View.GONE);
+                searchProducts(txt);
             }
             return true;
         });
 
+        // Pedir permiso de ubicación
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{ Manifest.permission.ACCESS_FINE_LOCATION }, REQ_LOC);
+        } else {
+            setupNearbySupermarkets();
+        }
 
-//        // Historial horizontal
-//        historyRv = findViewById(R.id.historyRecyclerView);
-//        historyRv.setLayoutManager(
-//                new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
-//        );
-//        historyAdapter = new ProductAdapter(historyList, p->{
-//            // para el historial sólo abrimos detalle
-//            startDetail(p);
-//        });
-//        historyRv.setAdapter(historyAdapter);
-//        loadSearchHistory();
 
         adapter = new ProductAdapter(productList, p-> {
             // sólo cuando hay texto en el buscador guardamos en searchHistory
@@ -177,8 +189,100 @@ public class HomeActivity extends AppCompatActivity {
             return false;
         });
 
-
     }
+
+    @Override
+    public void onRequestPermissionsResult(int req, @NonNull String[] perms, @NonNull int[] grants) {
+        super.onRequestPermissionsResult(req, perms, grants);
+        if (req == REQ_LOC) {
+            if (grants.length > 0 && grants[0] == PackageManager.PERMISSION_GRANTED) {
+                setupNearbySupermarkets();
+            } else {
+                // Ocultar tarjeta de cercanos
+                findViewById(R.id.nearbyCard).setVisibility(View.GONE);
+            }
+        }
+    }
+
+    private void setupNearbySupermarkets() {
+        // 1) Obtener LocationManager y última ubicación
+        LocationManager lm = (LocationManager) getSystemService(LOCATION_SERVICE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Seguridad: no tenemos permiso (debería ir por onRequestPermissionsResult)
+            findViewById(R.id.nearbyCard).setVisibility(View.GONE);
+            return;
+        }
+        Location last = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        if (last == null) {
+            // Intentar red de móvil si GPS falla
+            last = lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        }
+        if (last == null) {
+            // No hay ubicación: ocultar sección
+            findViewById(R.id.nearbyCard).setVisibility(View.GONE);
+        } else {
+            // Llamar a tu helper pasando la ubicación y el contenedor
+            loadNearbySupermarkets(last, nearbyContainer);
+        }
+    }
+    private void loadNearbySupermarkets(Location userLoc, LinearLayout container) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("supermarkets")
+                .get()
+                .addOnSuccessListener(snap -> {
+                    // Para cada supermercado
+                    for (DocumentSnapshot supDoc: snap.getDocuments()) {
+                        String supId   = supDoc.getId();
+                        String logoUrl = supDoc.getString("logoUrl");
+
+                        // recorremos sus locations
+                        db.collection("supermarkets")
+                                .document(supId)
+                                .collection("locations")
+                                .get()
+                                .addOnSuccessListener(locSnap -> {
+                                    // buscamos la location más cercana
+                                    double bestDist = Double.MAX_VALUE;
+                                    DocumentSnapshot bestLocDoc = null;
+                                    for (DocumentSnapshot locDoc: locSnap.getDocuments()) {
+                                        GeoPoint gp = locDoc.getGeoPoint("location");
+                                        if (gp == null) continue;
+                                        float[] results = new float[1];
+                                        Location.distanceBetween(
+                                                userLoc.getLatitude(), userLoc.getLongitude(),
+                                                gp.getLatitude(), gp.getLongitude(),
+                                                results
+                                        );
+                                        if (results[0] < bestDist) {
+                                            bestDist = results[0];
+                                            bestLocDoc = locDoc;
+                                        }
+                                    }
+                                    if (bestLocDoc != null) {
+                                        // 4) Inflar el item y rellenar datos
+                                        View item = LayoutInflater.from(this)
+                                                .inflate(R.layout.item_nearby_supermarket, container, false);
+                                        ImageView ivLogo = item.findViewById(R.id.nearbyLogo);
+                                        TextView  tvName = item.findViewById(R.id.nearbyName);
+                                        TextView  tvAddr = item.findViewById(R.id.nearbyAddress);
+                                        TextView  tvDist = item.findViewById(R.id.nearbyDistance);
+
+                                        // logo
+                                        Glide.with(this).load(logoUrl).into(ivLogo);
+                                        // nombre y dirección
+                                        tvName.setText(bestLocDoc.getString("name"));
+                                        tvAddr.setText(bestLocDoc.getString("address"));
+                                        // distancia en km
+                                        tvDist.setText(String.format(Locale.getDefault(),"%.1f km", bestDist/1000));
+
+                                        container.addView(item);
+                                    }
+                                });
+                    }
+                });
+    }
+
     private void startDetail(Product p) {
         Intent it = new Intent(this, ProductDetailActivity.class);
         it.putExtra("product", p);
