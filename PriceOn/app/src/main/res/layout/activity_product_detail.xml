@@ -105,7 +105,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:textSize="24sp"
-                    android:textColor="@android:color/holo_green_dark"
+                    android:textColor="?attr/customPriceColor"
                     android:textStyle="bold"/>
             </LinearLayout>
 
@@ -147,7 +147,7 @@
         android:id="@+id/bottomNavigationBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="?android:attr/windowBackground"
+        android:background="@color/my_dark_primary"
         app:menu="@menu/bottom_navigation_menu"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"

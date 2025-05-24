@@ -88,7 +88,7 @@
             <!-- Marca -->
             <TextView
                 android:id="@+id/labelBrand"
-                style="@style/TextAppearance.MaterialComponents.Subtitle1"
+                style="@style/TextAppearance.App.Headline"
                 android:text="Marca"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -108,7 +108,7 @@
             <!-- Tipo de producto -->
             <TextView
                 android:id="@+id/labelType"
-                style="@style/TextAppearance.MaterialComponents.Subtitle1"
+                style="@style/TextAppearance.App.Headline"
                 android:text="Tipo de producto"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -181,7 +181,7 @@
             <!-- Supermercado -->
             <TextView
                 android:id="@+id/labelSuper"
-                style="@style/TextAppearance.MaterialComponents.Subtitle1"
+                style="@style/TextAppearance.App.Headline"
                 android:text="Supermercado"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -232,12 +232,14 @@
     </ScrollView>
 
     <!-- Bottom nav -->
-    <include
-        layout="@layout/bottom_nav"
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigationBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:background="@color/my_dark_primary"
+        app:menu="@menu/bottom_navigation_menu"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -20,10 +20,14 @@ import java.util.List;
 
 public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductViewHolder>{
     private List<Product> products;
+    private final OnProductClickListener listener;
 
-    public ProductAdapter(List<Product> productos) {
+
+    public ProductAdapter(List<Product> productos, OnProductClickListener l) {
         this.products = productos;
+        this.listener = l;
     }
+
     @NonNull
     @Override
     public ProductViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -90,6 +94,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
 
         }
+        holder.itemView.setOnClickListener(v -> listener.onProductClick(product));
 
     }
 
@@ -114,5 +119,9 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
             quantityText = itemView.findViewById(R.id.productQuantity);
 
         }
+    }
+
+    public interface OnProductClickListener {
+        void onProductClick(Product p);
     }
 }

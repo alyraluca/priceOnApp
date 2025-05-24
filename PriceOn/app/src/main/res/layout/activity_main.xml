@@ -14,7 +14,7 @@
         android:layout_width="300dp"
         android:layout_height="300dp"
         android:contentDescription="@string/app_logo"
-        android:src="@drawable/logo2"
+        android:src="@drawable/logoverde"
         app:layout_constraintBottom_toTopOf="@+id/loginButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

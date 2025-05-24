@@ -329,7 +329,7 @@ public class ProductDetailActivity extends AppCompatActivity {
                                                     TextView   tvUnitPrice= item.findViewById(R.id.supermarketUnitPrice);
                                                     ImageButton btnEdit   = item.findViewById(R.id.btnUpdateSuperPrice);
 
-                                                    btnEdit.setImageResource(R.drawable.actualizar);
+                                                    //btnEdit.setImageResource(R.drawable.actualizar);
 
                                                     tvName.setText(name);
                                                     tvPrice.setText(String.format(Locale.getDefault(), "%.2f €", price));

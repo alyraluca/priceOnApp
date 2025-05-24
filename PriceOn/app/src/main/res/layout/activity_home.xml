@@ -8,7 +8,9 @@
     android:layout_height="match_parent"
     tools:context=".ui.HomeActivity">
 
+    <!-- Top App Bar -->
     <include
+        android:id="@+id/topAppBar"
         layout="@layout/top_app_bar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -16,47 +18,75 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-
+    <!-- Search Input -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/searchEditTextLayout"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="30dp"
         android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
         android:hint="@string/search_product_hint"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/topAppBar"
-        app:layout_constraintEnd_toEndOf="parent"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/searchEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="text" />
+
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- Historial título -->
+    <TextView
+        android:id="@+id/labelSearchHistory"
+        style="@style/TextAppearance.MaterialComponents.Subtitle1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Últimas búsquedas"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/searchEditTextLayout"
+        app:layout_constraintStart_toStartOf="parent"/>
 
+    <!-- RecyclerView horizontal para historial -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/historyRecyclerView"
+        android:layout_width="0dp"
+        android:layout_height="150dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/labelSearchHistory"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:overScrollMode="never"
+        tools:listitem="@layout/item_product"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        />
+
+    <!-- RecyclerView principal (resultados de búsqueda) -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/contentRecyclerView"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@+id/searchEditTextLayout"
+        app:layout_constraintTop_toBottomOf="@+id/historyRecyclerView"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@+id/bottomNavigationBar"
         tools:listitem="@layout/item_product" />
 
-
-    <include
-        layout="@layout/bottom_nav"
+    <!-- Bottom Navigation Bar -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigationBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:background="@color/my_dark_primary"
+        app:menu="@menu/bottom_navigation_menu"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>
