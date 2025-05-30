@@ -1,11 +1,10 @@
-package com.example.myapplication3.priceon.ui;
+package com.example.myapplication3.priceon.activities;
 
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.myapplication3.priceon.R;
 import com.google.firebase.auth.FirebaseAuth;
 import android.content.Intent;
-import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
@@ -21,24 +20,22 @@ public class LoginActivity extends AppCompatActivity {
     private EditText emailEditText, passwordEditText;
     private Button loginButton;
     private TextView registerLinkTextView;
-
-    private FirebaseAuth mAuth;
     private TextView guestLoginTextView;
+    //Instanciamos FirebaseAuth
+    private FirebaseAuth firebaseAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        mAuth = FirebaseAuth.getInstance();
+        firebaseAuth = FirebaseAuth.getInstance();
 
-        // Referenciar los campos
         emailEditText = findViewById(R.id.emailEditText);
         passwordEditText = findViewById(R.id.passwordEditText);
         loginButton = findViewById(R.id.loginButton);
         registerLinkTextView = findViewById(R.id.registerLinkTextView);
         guestLoginTextView = findViewById(R.id.guestLoginTextView);
-
 
         //Botón de log in
         loginButton.setOnClickListener(v -> loginUser());
@@ -48,7 +45,7 @@ public class LoginActivity extends AppCompatActivity {
             startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
             finish();
         });
-
+        //Link para redirigir a 'home' a los invitados
         guestLoginTextView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -65,11 +62,11 @@ public class LoginActivity extends AppCompatActivity {
 
         if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
             Toast.makeText(this, "Introduce email y contraseña", Toast.LENGTH_SHORT).show();
-            return;
+            return; // Salimos de la función si no hay datos
         }
 
-        //Iniciar sesión con Firebase
-        mAuth.signInWithEmailAndPassword(email, password)
+        //Iniciamos sesión con el método más común y simple de Firebase
+        firebaseAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         Toast.makeText(this, "Inicio de sesión correcto", Toast.LENGTH_SHORT).show();
@@ -80,6 +77,4 @@ public class LoginActivity extends AppCompatActivity {
                     }
                 });
     }
-
-
 }

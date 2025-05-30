@@ -1,4 +1,4 @@
-package com.example.myapplication3.priceon.ui;
+package com.example.myapplication3.priceon.activities;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -14,7 +14,6 @@ import androidx.core.content.ContextCompat;
 
 import com.example.myapplication3.priceon.R;
 import android.content.Intent;
-import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -29,13 +28,13 @@ import java.util.Map;
 import java.util.Objects;
 
 public class RegisterActivity extends AppCompatActivity {
-    private FirebaseAuth mAuth;
+    private FirebaseAuth firebaseAuth;
 
     private EditText nameEditText, emailEditText, passwordEditText, confirmPasswordEditText;
     private Button registerButton;
     private TextView loginLinkTextView;
     private TextView guestLoginTextView;
-    private FirebaseFirestore db;
+    private FirebaseFirestore firestore;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
     private String pendingUid, pendingName, pendingEmail;
 
@@ -44,12 +43,12 @@ public class RegisterActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
-        db = FirebaseFirestore.getInstance();
+        firestore = FirebaseFirestore.getInstance();
 
         //Iniciar Firebase Auth
-        mAuth = FirebaseAuth.getInstance();
+        firebaseAuth = FirebaseAuth.getInstance();
 
-        //Referenciar los campos
+        //Referenciamos los campos
         nameEditText = findViewById(R.id.nameEditText);
         emailEditText = findViewById(R.id.emailEditText);
         passwordEditText = findViewById(R.id.passwordEditText);
@@ -61,12 +60,12 @@ public class RegisterActivity extends AppCompatActivity {
         //Botón registrarse
         registerButton.setOnClickListener(v -> registerUser());
 
-        //link para redirigir a login
+        //Link para redirigir a login
         loginLinkTextView.setOnClickListener(v -> {
             startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
             finish();
         });
-
+        //Link para redirigir a home a los invitados
         guestLoginTextView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -97,12 +96,11 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-        //Crear usuario en Firebase Auth
-        mAuth.createUserWithEmailAndPassword(email, password)
+        //Creamos usuario en Firebase Auth
+        firebaseAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        String uid = Objects.requireNonNull(mAuth.getCurrentUser()).getUid();
-
+                        String uid = Objects.requireNonNull(firebaseAuth.getCurrentUser()).getUid();
                         // Guardar temporalmente para usar luego si se aprueba el permiso
                         pendingUid = uid;
                         pendingName = name;
@@ -117,7 +115,6 @@ public class RegisterActivity extends AppCompatActivity {
                     } else {
                         Toast.makeText(this, "Error: " + Objects.requireNonNull(task.getException()).getMessage(), Toast.LENGTH_LONG).show();
                     }
-
                 });
     }
     @Override
@@ -166,7 +163,7 @@ public class RegisterActivity extends AppCompatActivity {
         userMap.put("role", "user");
         userMap.put("location", geoPoint);
 
-        db.collection("users").document(uid)
+        firestore.collection("users").document(uid)
                 .set(userMap)
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(RegisterActivity.this, "Registro exitoso", Toast.LENGTH_SHORT).show();
@@ -177,5 +174,4 @@ public class RegisterActivity extends AppCompatActivity {
                     Toast.makeText(RegisterActivity.this, "Error al guardar datos: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 });
     }
-
 }

@@ -1,4 +1,4 @@
-package com.example.myapplication3.priceon.ui.adapter;
+package com.example.myapplication3.priceon.adapter;
 
 import android.content.Context;
 import android.content.Intent;
@@ -12,7 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.example.myapplication3.priceon.ProductDetailActivity;
+import com.example.myapplication3.priceon.activities.ProductDetailActivity;
 import com.example.myapplication3.priceon.R;
 import com.example.myapplication3.priceon.data.model.Product;
 

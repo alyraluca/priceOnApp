@@ -1,20 +1,24 @@
-package com.example.myapplication3.priceon;
+package com.example.myapplication3.priceon.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.text.TextUtils;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import com.example.myapplication3.priceon.R;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import android.widget.Spinner;
@@ -30,16 +34,15 @@ import com.example.myapplication3.priceon.data.model.Supermarkets;
 
 public class AddProductActivity extends AppCompatActivity {
 
-    private TextInputLayout tilBarCode, tilName, tilQtyPack, tilQtyUnity, tilUnit, tilInitialPrice;
+    private TextInputLayout barCodeInputLayout, productNameInputLayout, packQuantityInputLayout, unityQuantityInputLayout, unitInputLayout, initialPriceInputLayout;
     private TextInputEditText etBarCode, etName, etQtyPack, etQtyUnity, etUnit, etInitialPrice;
     private Spinner spinnerBrand, spinnerType, spinnerSupermarket;
-    private Button btnSave;
-
+    private Button saveButton;
     private List<Brands>    brandsList;
     private List<ProductTypes> typesList;
-    private List<Supermarkets> supsList;
-    private TextInputLayout     tilPhotoUrl;
-    private TextInputEditText   etPhotoUrl;
+    private List<Supermarkets> supermarketList;
+    private TextInputLayout photoUrlInputLayout;
+    private TextInputEditText photoUrlEditText;
     private BottomNavigationView bottomNavigationView;
     private FirebaseFirestore db;
 
@@ -48,7 +51,6 @@ public class AddProductActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_product);
 
-        // Toolbar con icono “+”
         Toolbar toolbar = findViewById(R.id.topAppBar);
         toolbar.setTitle("Nuevo producto");
         setSupportActionBar(toolbar);
@@ -56,37 +58,37 @@ public class AddProductActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
 
-        // Referencias de vistas
-        tilBarCode        = findViewById(R.id.tilBarCode);
+        barCodeInputLayout = findViewById(R.id.tilBarCode);
         etBarCode         = findViewById(R.id.etBarCode);
-        tilName           = findViewById(R.id.tilProductName);
+        productNameInputLayout = findViewById(R.id.tilProductName);
         etName            = findViewById(R.id.etProductName);
         spinnerBrand      = findViewById(R.id.spinnerBrand);
         spinnerType       = findViewById(R.id.spinnerType);
-        tilQtyPack        = findViewById(R.id.tilQtyPack);
+        packQuantityInputLayout = findViewById(R.id.tilQtyPack);
         etQtyPack         = findViewById(R.id.etQtyPack);
-        tilQtyUnity       = findViewById(R.id.tilQtyUnity);
+        unityQuantityInputLayout = findViewById(R.id.tilQtyUnity);
         etQtyUnity        = findViewById(R.id.etQtyUnity);
-        tilUnit           = findViewById(R.id.tilUnit);
+        unitInputLayout = findViewById(R.id.tilUnit);
         etUnit            = findViewById(R.id.etUnit);
         spinnerSupermarket= findViewById(R.id.spinnerSupermarket);
-        tilInitialPrice   = findViewById(R.id.tilInitPrice);
+        initialPriceInputLayout = findViewById(R.id.tilInitPrice);
         etInitialPrice    = findViewById(R.id.etInitialPrice);
-        btnSave           = findViewById(R.id.btnSaveProduct);
-        tilPhotoUrl = findViewById(R.id.tilPhotoUrl);
-        etPhotoUrl  = findViewById(R.id.etPhotoUrl);
+        saveButton = findViewById(R.id.btnSaveProduct);
+        photoUrlInputLayout = findViewById(R.id.tilPhotoUrl);
+        photoUrlEditText = findViewById(R.id.etPhotoUrl);
         bottomNavigationView = findViewById(R.id.bottomNavigationBar);
 
         loadBrands();
         loadProductTypes();
         loadSupermarkets();
 
-        btnSave.setOnClickListener(v -> saveProduct());
+        saveButton.setOnClickListener(v -> saveProduct());
 
         bottomNavigationView = findViewById(R.id.bottomNavigationBar);
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.navigation_home) {
+                startActivity(new Intent(this, HomeActivity.class));
                 return true;
             } else if (id == R.id.navigation_scan) {
                 startActivity(new Intent(this, BarcodeScannerActivity.class));
@@ -133,9 +135,9 @@ public class AddProductActivity extends AppCompatActivity {
         db.collection("supermarkets")
                 .get()
                 .addOnSuccessListener(snap -> {
-                    supsList = snap.toObjects(Supermarkets.class);
+                    supermarketList = snap.toObjects(Supermarkets.class);
                     List<String> labels = new ArrayList<>();
-                    for (Supermarkets s : supsList) labels.add(s.getName());
+                    for (Supermarkets s : supermarketList) labels.add(s.getName());
                     ArrayAdapter<String> adapter = new ArrayAdapter<>(
                             this, android.R.layout.simple_spinner_item, labels
                     );
@@ -145,11 +147,9 @@ public class AddProductActivity extends AppCompatActivity {
     }
 
     private void saveProduct() {
-        // Validaciones…
-        // Obtenemos el ID de la posición seleccionada:
         String brandId = brandsList.get(spinnerBrand.getSelectedItemPosition()).getId();
         String typeId  = typesList .get(spinnerType .getSelectedItemPosition()).getId();
-        String supId   = supsList  .get(spinnerSupermarket.getSelectedItemPosition()).getId();
+        String supId   = supermarketList.get(spinnerSupermarket.getSelectedItemPosition()).getId();
 
         Map<String,Object> prod = new HashMap<>();
         prod.put("barCode",       etBarCode.getText().toString().trim());
@@ -159,22 +159,19 @@ public class AddProductActivity extends AppCompatActivity {
         prod.put("quantityPack",  Double.parseDouble(etQtyPack.getText().toString().trim()));
         prod.put("quantityUnity", Double.parseDouble(etQtyUnity.getText().toString().trim()));
         prod.put("unit",          etUnit   .getText().toString().trim());
-        String url = etPhotoUrl.getText().toString().trim();
+        String url = photoUrlEditText.getText().toString().trim();
         prod.put("photoUrl", url);
 
-        // 1) guardo en products
         db.collection("products")
                 .add(prod)
                 .addOnSuccessListener(docRef -> {
                     String newProdId = docRef.getId();
-                    // 2) creo relación en productSupermarket
                     Map<String,Object> rel = new HashMap<>();
                     rel.put("productId",     newProdId);
                     rel.put("supermarketId", supId);
                     db.collection("productSupermarket")
                             .add(rel)
                             .addOnSuccessListener(psRef -> {
-                                // 3) subcolección priceUpdate
                                 Map<String,Object> upd = new HashMap<>();
                                 upd.put("price",          Double.parseDouble(etInitialPrice.getText().toString().trim()));
                                 upd.put("lastPriceUpdate", Timestamp.now());
@@ -195,5 +192,31 @@ public class AddProductActivity extends AppCompatActivity {
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Error al guardar producto", Toast.LENGTH_SHORT).show()
                 );
+    }
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.action_profile) {
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            Intent intent;
+            if (currentUser != null) {
+                intent = new Intent(this, ProfileActivity.class);
+            } else {
+                intent = new Intent(this, MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            }
+            startActivity(intent);
+            if (currentUser == null) finish();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.top_app_bar_menu, menu);
+        return true;
     }
 }

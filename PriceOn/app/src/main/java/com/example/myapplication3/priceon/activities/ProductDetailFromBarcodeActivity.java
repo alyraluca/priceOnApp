@@ -1,25 +1,22 @@
-package com.example.myapplication3.priceon;
+package com.example.myapplication3.priceon.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.bumptech.glide.Glide;
+import com.example.myapplication3.priceon.R;
 import com.example.myapplication3.priceon.data.model.Product;
-import com.example.myapplication3.priceon.ui.HomeActivity;
-import com.example.myapplication3.priceon.ui.MainActivity;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
@@ -92,22 +89,7 @@ public class ProductDetailFromBarcodeActivity extends AppCompatActivity {
         });
 
         MaterialToolbar topAppBar = findViewById(R.id.topAppBar);
-        topAppBar.setOnMenuItemClickListener(item -> {
-            if (item.getItemId() == R.id.action_profile) {
-                FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-
-                if (currentUser != null) {
-                    startActivity(new Intent(this, ProfileActivity.class));
-                } else {
-                    Intent intent = new Intent(this, MainActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    startActivity(intent);
-                    finish(); // Cierra HomeActivity para que no pueda volver con el botón atrás
-                }
-                return true;
-            }
-            return false;
-        });
+        setSupportActionBar(topAppBar);
 
         String barcode = getIntent().getStringExtra("barcode");
         if (barcode != null) {
@@ -118,8 +100,6 @@ public class ProductDetailFromBarcodeActivity extends AppCompatActivity {
         }
 
     }
-
-    // -- mismos métodos de favoritos --
     private void checkFavoriteState() {
         db.collection("users")
                 .document(uid)
@@ -435,5 +415,54 @@ public class ProductDetailFromBarcodeActivity extends AppCompatActivity {
     private void showError() {
         Toast.makeText(this, "Error al buscar producto.", Toast.LENGTH_LONG).show();
         finish();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.action_add) {
+            FirebaseUser u = FirebaseAuth.getInstance().getCurrentUser();
+            if (u == null) {
+                Toast.makeText(this, "Necesitas estar logueado", Toast.LENGTH_SHORT).show();
+            } else {
+                FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(u.getUid())
+                        .get()
+                        .addOnSuccessListener(doc -> {
+                            String role = doc.getString("role");
+                            if ("admin".equals(role)) {
+                                startActivity(new Intent(this, AddProductActivity.class));
+                            } else {
+                                Toast.makeText(this,
+                                        "Necesitas ser administrador para añadir productos",
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        });
+            }
+            return true;
+        }
+        else if (id == R.id.action_profile) {
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            Intent intent;
+            if (currentUser != null) {
+                intent = new Intent(this, ProfileActivity.class);
+            } else {
+                intent = new Intent(this, MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            }
+            startActivity(intent);
+            if (currentUser == null) finish();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.top_app_bar_menu, menu);
+        return true;
     }
 }

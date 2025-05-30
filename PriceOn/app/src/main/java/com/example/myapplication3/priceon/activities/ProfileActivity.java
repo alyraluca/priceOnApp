@@ -1,4 +1,4 @@
-package com.example.myapplication3.priceon;
+package com.example.myapplication3.priceon.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -8,14 +8,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
-import com.example.myapplication3.priceon.ui.HomeActivity;
-import com.example.myapplication3.priceon.ui.MainActivity;
+import com.example.myapplication3.priceon.R;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;

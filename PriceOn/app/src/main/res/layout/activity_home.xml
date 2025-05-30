@@ -6,9 +6,8 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.HomeActivity">
+    tools:context=".activities.HomeActivity">
 
-    <!-- Top App Bar (fija) -->
     <include
         android:id="@+id/topAppBar"
         layout="@layout/top_app_bar"
@@ -18,7 +17,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- Área desplazable -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollView"
         android:layout_width="0dp"
@@ -35,7 +33,6 @@
             android:layout_height="wrap_content"
             android:padding="16dp">
 
-            <!-- Search Input -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/searchEditTextLayout"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -48,10 +45,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="text" />
-
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Historial título -->
             <TextView
                 android:id="@+id/labelSearchHistory"
                 style="@style/TextAppearance.MaterialComponents.Headline6"
@@ -60,7 +55,6 @@
                 android:text="Últimos productos vistos"
                 android:layout_marginTop="16dp"/>
 
-            <!-- RecyclerView horizontal para historial -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/historyCard"
                 android:layout_width="match_parent"
@@ -76,10 +70,8 @@
                     android:overScrollMode="never"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                     tools:listitem="@layout/item_product" />
-
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Título “Supermercados cercanos” -->
             <TextView
                 android:id="@+id/labelNearby"
                 style="@style/TextAppearance.MaterialComponents.Headline6"
@@ -88,7 +80,6 @@
                 android:text="Supermercados cercanos"
                 android:layout_marginTop="16dp"/>
 
-            <!-- Card de “Supermercados cercanos” -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/nearbyCard"
                 android:layout_width="match_parent"
@@ -103,12 +94,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="16dp">
-                    <!-- Aquí irán los elementos de supermercados cercanos -->
                 </LinearLayout>
-
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- RecyclerView principal (contenido) -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/contentRecyclerView"
                 android:layout_width="match_parent"
@@ -116,11 +104,9 @@
                 android:layout_marginTop="16dp"
                 android:nestedScrollingEnabled="false"
                 tools:listitem="@layout/item_product" />
-
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Bottom Navigation Bar (fija) -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigationBar"
         android:layout_width="0dp"
@@ -130,5 +116,4 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,16 +1,16 @@
-package com.example.myapplication3.priceon;
+package com.example.myapplication3.priceon.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
+import android.view.Menu;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.myapplication3.priceon.R;
 import com.example.myapplication3.priceon.data.model.Product;
-import com.example.myapplication3.priceon.ui.HomeActivity;
-import com.example.myapplication3.priceon.ui.*;
-import com.example.myapplication3.priceon.ui.adapter.ProductAdapter;
+import com.example.myapplication3.priceon.adapter.ProductAdapter;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
@@ -29,7 +29,6 @@ public class FavoritesActivity extends AppCompatActivity {
     private RecyclerView favoritesRecycler;
     private ProductAdapter adapter;
     private List<Product> favoritesList = new ArrayList<>();
-
     private FirebaseFirestore db;
     private String uid;
     private BottomNavigationView bottomNavigationView;
@@ -43,18 +42,15 @@ public class FavoritesActivity extends AppCompatActivity {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         uid = user != null ? user.getUid() : null;
 
-        // Toolbar
         MaterialToolbar topAppBar = findViewById(R.id.topAppBar);
         setSupportActionBar(topAppBar);
         topAppBar.setTitle("Favoritos");
 
-        // RecyclerView + Adapter
         favoritesRecycler = findViewById(R.id.favoritesRecycler);
         favoritesRecycler.setLayoutManager(new LinearLayoutManager(this));
         adapter = new ProductAdapter(
                 favoritesList,
                 product -> {
-                    // Al hacer click abrimos detalle igual que en HomeActivity
                     Intent it = new Intent(this, ProductDetailActivity.class);
                     it.putExtra("product", product);
                     startActivity(it);
@@ -62,7 +58,6 @@ public class FavoritesActivity extends AppCompatActivity {
         );
         favoritesRecycler.setAdapter(adapter);
 
-        // BottomNavigation
         bottomNavigationView = findViewById(R.id.bottomNavigationBar);
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
@@ -159,10 +154,8 @@ public class FavoritesActivity extends AppCompatActivity {
     }
 
     private void afterPriceLoaded(Product p, List<Product> list, AtomicInteger processed) {
-        // Una vez tenemos precio, cargamos marca y logos
         loadProductBrand(p, () ->
                 loadPricesAndSupermarkets(p, () -> {
-                    // Añadimos a la lista final y notificamos cuando todos estén
                     favoritesList.add(p);
                     if (processed.incrementAndGet() == list.size()) {
                         adapter.notifyDataSetChanged();
@@ -230,5 +223,11 @@ public class FavoritesActivity extends AppCompatActivity {
                     }
                 })
                 .addOnFailureListener(e -> onDone.run());
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.top_app_bar_menu, menu);
+        return true;
     }
 }

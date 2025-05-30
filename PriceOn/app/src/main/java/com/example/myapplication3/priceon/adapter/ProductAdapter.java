@@ -1,6 +1,5 @@
-package com.example.myapplication3.priceon.ui.adapter;
+package com.example.myapplication3.priceon.adapter;
 
-import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,7 +11,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.example.myapplication3.priceon.ProductDetailActivity;
 import com.example.myapplication3.priceon.R;
 import com.example.myapplication3.priceon.data.model.Product;
 
@@ -39,42 +37,31 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
     @Override
     public void onBindViewHolder(@NonNull ProductViewHolder holder, int position) {
         Product product = products.get(position);
-
         holder.nameText.setText(product.getName());
-
-        //String brandName = (product.getBrandName() != null) ? product.getBrandName() : "Desconocida";
         holder.brandText.setText(
                 product.getBrandName()!=null ? product.getBrandName() : "Desconocida"
         );
-
-        //String precioTexto = product.getMinPrice() > 0 ? product.getMinPrice() + " €" : "Precio no disponible";
         holder.priceText.setText(
                 product.getMinPrice()>0
                         ? product.getMinPrice()+" €"
                         : ""
         );
-
-        //holder.pricePerUnitText.setText(product.getPricePerUnit() + " € / " + product.getUnit());
-
         String pricePerUnit = product.getPricePerUnit();
         if (!pricePerUnit.equals("-")) {
             holder.pricePerUnitText.setText(pricePerUnit + " € / " + product.getUnit());
         } else {
             holder.pricePerUnitText.setText("");
         }
-
         String qty = (product.getQuantityPack()>0 && product.getQuantityUnity()>0)
                 ? product.getQuantityPack()+" x "+product.getQuantityUnity()+" "+product.getUnit()
                 : "";
         holder.quantityText.setText(qty);
-
         Glide.with(holder.itemView.getContext())
                 .load(product.getPhotoUrl())
                 .placeholder(R.drawable.ic_launcher_background)
                 .error(R.drawable.ic_launcher_background)
                 .into(holder.imageView);
 
-        // Mostrar logos de supermercados
         holder.supermarketLogoContainer.removeAllViews();
         for (String logoUrl : product.getSupermarketLogoUrls()) {
             ImageView logo = new ImageView(holder.itemView.getContext());
@@ -88,9 +75,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
             Glide.with(holder.itemView.getContext()).load(logoUrl).into(logo);
             holder.supermarketLogoContainer.addView(logo);
         }
-
         holder.itemView.setOnClickListener(v -> listener.onProductClick(product));
-
     }
 
     @Override
