@@ -2,6 +2,7 @@ package com.example.myapplication3.priceon.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
@@ -14,10 +15,13 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 import com.example.myapplication3.priceon.R;
+import com.example.myapplication3.priceon.data.model.Product;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
 import com.google.mlkit.vision.barcode.common.Barcode;
@@ -45,6 +49,11 @@ public class BarcodeScannerActivity extends AppCompatActivity {
         previewView = findViewById(R.id.previewView);
         cameraExecutor = Executors.newSingleThreadExecutor();
         startCamera();
+
+        String barcode = getIntent().getStringExtra("barcode");
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        String uid = user != null ? user.getUid() : null;
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
@@ -130,42 +139,10 @@ public class BarcodeScannerActivity extends AppCompatActivity {
     }
 
     private void openProductDetailWithBarcode(String barcode) {
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        String uid = user != null ? user.getUid() : null;
-        if (uid != null) {
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
-            db.collection("products")
-                    .whereEqualTo("barcode", barcode)
-                    .limit(1)
-                    .get()
-                    .addOnSuccessListener(snap -> {
-                        if (!snap.isEmpty()) {
-                            String productId = snap.getDocuments().get(0).getId();
-                            Map<String,Object> entry = new HashMap<>();
-                            entry.put("productId", productId);
-                            entry.put("timestamp", com.google.firebase.Timestamp.now());
-                            db.collection("users")
-                                    .document(uid)
-                                    .collection("searchHistory")
-                                    .add(entry);
-                        }
-                        Intent intent = new Intent(this, ProductDetailFromBarcodeActivity.class);
-                        intent.putExtra("barcode", barcode);
-                        startActivity(intent);
-                        finish();
-                    })
-                    .addOnFailureListener(e -> {
-                        Intent intent = new Intent(this, ProductDetailFromBarcodeActivity.class);
-                        intent.putExtra("barcode", barcode);
-                        startActivity(intent);
-                        finish();
-                    });
-        } else {
-            Intent intent = new Intent(this, ProductDetailFromBarcodeActivity.class);
-            intent.putExtra("barcode", barcode);
-            startActivity(intent);
-            finish();
-        }
+        Intent intent = new Intent(this, ProductDetailFromBarcodeActivity.class);
+        intent.putExtra("barcode", barcode);
+        startActivity(intent);
+        finish();
     }
 
 

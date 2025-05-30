@@ -29,6 +29,7 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.GeoPoint;
@@ -99,19 +100,32 @@ public class HomeActivity extends AppCompatActivity {
                 productList,
                 product -> {
                     if (uid != null) {
-                        Map<String,Object> entry = new HashMap<>();
-                        entry.put("productId", product.getId());
-                        entry.put("timestamp", com.google.firebase.Timestamp.now());
-                        db.collection("users")
+                        CollectionReference hist = db.collection("users")
                                 .document(uid)
-                                .collection("searchHistory")
-                                .add(entry);
+                                .collection("searchHistory");
+                        String productId = product.getId();
+                        hist.whereEqualTo("productId", productId)
+                                .limit(1)
+                                .get()
+                                .addOnSuccessListener(q -> {
+                                    if (!q.isEmpty()) {
+                                        q.getDocuments().get(0)
+                                                .getReference()
+                                                .update("timestamp", com.google.firebase.Timestamp.now());
+                                    } else {
+                                        Map<String,Object> entry = new HashMap<>();
+                                        entry.put("productId", productId);
+                                        entry.put("timestamp", com.google.firebase.Timestamp.now());
+                                        hist.add(entry);
+                                    }
+                                });
                     }
-                    Intent it = new Intent(this, ProductDetailActivity.class);
-                    it.putExtra("product", product);
-                    startActivity(it);
+                    Intent intent = new Intent(this, ProductDetailActivity.class);
+                    intent.putExtra("product", product);
+                    startActivity(intent);
                 }
         );
+
 
         searchEditText.setOnEditorActionListener((v, a, e) -> {
             String txt = v.getText().toString().trim();
@@ -234,15 +248,15 @@ public class HomeActivity extends AppCompatActivity {
                                     if (bestLocDoc != null) {
                                         View item = LayoutInflater.from(this)
                                                 .inflate(R.layout.item_nearby_supermarket, container, false);
-                                        ImageView ivLogo = item.findViewById(R.id.nearbyLogo);
-                                        TextView  tvName = item.findViewById(R.id.nearbyName);
-                                        TextView  tvAddr = item.findViewById(R.id.nearbyAddress);
-                                        TextView  tvDist = item.findViewById(R.id.nearbyDistance);
+                                        ImageView nearbyLogoImageView = item.findViewById(R.id.nearbyLogo);
+                                        TextView  nearbyNameTextView = item.findViewById(R.id.nearbyName);
+                                        TextView  nearbyAddressTextView = item.findViewById(R.id.nearbyAddress);
+                                        TextView  nearbyDistanceTextView = item.findViewById(R.id.nearbyDistance);
 
-                                        Glide.with(this).load(logoUrl).into(ivLogo);
-                                        tvName.setText(bestLocDoc.getString("name"));
-                                        tvAddr.setText(bestLocDoc.getString("address"));
-                                        tvDist.setText(String.format(Locale.getDefault(),"%.1f km", bestDist/1000));
+                                        Glide.with(this).load(logoUrl).into(nearbyLogoImageView);
+                                        nearbyNameTextView.setText(bestLocDoc.getString("name"));
+                                        nearbyAddressTextView.setText(bestLocDoc.getString("address"));
+                                        nearbyDistanceTextView.setText(String.format(Locale.getDefault(),"%.1f km", bestDist/1000));
 
                                         container.addView(item);
                                     }

@@ -268,7 +268,6 @@ public class ProductDetailActivity extends AppCompatActivity {
                         return;
                     }
 
-                    // Variables para el mínimo y el control de concurrencia
                     final double[] minPrice = { Double.MAX_VALUE };
                     final int[] processed = { 0 };
 
@@ -276,13 +275,11 @@ public class ProductDetailActivity extends AppCompatActivity {
                         String psDocId       = doc.getId();
                         String supermarketId = doc.getString("supermarketId");
 
-                        // Traer el nombre del súper
                         db.collection("supermarkets").document(supermarketId)
                                 .get()
                                 .addOnSuccessListener(supermarketDoc -> {
                                     String name = supermarketDoc.getString("name");
 
-                                    // Traer el último precio
                                     db.collection("productSupermarket").document(psDocId)
                                             .collection("priceUpdate")
                                             .orderBy("lastPriceUpdate", Query.Direction.DESCENDING)
@@ -294,12 +291,10 @@ public class ProductDetailActivity extends AppCompatActivity {
                                                 if (!priceDocs.isEmpty()) {
                                                     double price = priceDocs.getDocuments().get(0).getDouble("price");
 
-                                                    // Actualizamos el mínimo global si hace falta
                                                     if (price < minPrice[0]) {
                                                         minPrice[0] = price;
                                                     }
 
-                                                    // Inflamos el ítem de la lista
                                                     View item = LayoutInflater.from(this)
                                                             .inflate(R.layout.item_supermarket_info, supermarketListContainer, false);
 
@@ -309,8 +304,6 @@ public class ProductDetailActivity extends AppCompatActivity {
                                                     TextView   tvUnitPrice= item.findViewById(R.id.supermarketUnitPrice);
                                                     ImageView btnEdit   = item.findViewById(R.id.btnUpdateSuperPrice);
 
-                                                    //btnEdit.setImageResource(R.drawable.actualizar);
-
                                                     tvName.setText(name);
                                                     tvPrice.setText(String.format(Locale.getDefault(), "%.2f €", price));
                                                     double qty = product.getQuantityUnity();
@@ -319,7 +312,6 @@ public class ProductDetailActivity extends AppCompatActivity {
                                                             ? String.format(Locale.getDefault(), "%.2f € / %s", price / qty, unit)
                                                             : "N/A");
 
-                                                    // Logo según súper
                                                     if ("Mercadona".equalsIgnoreCase(name))      logo.setImageResource(R.drawable.mercadona);
                                                     else if ("Dia".equalsIgnoreCase(name))      logo.setImageResource(R.drawable.dia_logo);
                                                     else                                        logo.setImageResource(R.drawable.alcampo);
@@ -328,7 +320,6 @@ public class ProductDetailActivity extends AppCompatActivity {
                                                     btnEdit.setEnabled(false);
                                                     btnEdit.setAlpha(0.4f);
 
-                                                    // Botón editar si es admin/mod
                                                     if ("admin".equals(role) || "mod".equals(role)) {
                                                         btnEdit.setEnabled(true);
                                                         btnEdit.setAlpha(1f);
@@ -347,7 +338,6 @@ public class ProductDetailActivity extends AppCompatActivity {
                                                     supermarketListContainer.addView(item);
                                                 }
 
-                                                // Cuando procesamos todos, actualizamos el "Desde"
                                                 if (processed[0] == total) {
                                                     if (minPrice[0] != Double.MAX_VALUE) {
                                                         minPriceLabel.setText(
@@ -413,7 +403,6 @@ public class ProductDetailActivity extends AppCompatActivity {
         List<Long> sortedDates = new ArrayList<>(pricesByDate.keySet());
         Collections.sort(sortedDates);
 
-        // Quedarse solo con las últimas 4 fechas
         if (sortedDates.size() > 4) {
             sortedDates = sortedDates.subList(sortedDates.size() - 4, sortedDates.size());
         }

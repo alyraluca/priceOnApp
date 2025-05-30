@@ -29,6 +29,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
@@ -154,11 +155,31 @@ public class ProductDetailFromBarcodeActivity extends AppCompatActivity {
                         if (product != null) {
                             updateUI(product);
                             productId = product.getId();
+
                             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
                             if (user != null) {
                                 uid = user.getUid();
-                                favoriteIcon.setVisibility(View.VISIBLE);
 
+                                CollectionReference hist = db.collection("users")
+                                        .document(uid)
+                                        .collection("searchHistory");
+                                hist.whereEqualTo("productId", productId)
+                                        .limit(1)
+                                        .get()
+                                        .addOnSuccessListener(q -> {
+                                            if (!q.isEmpty()) {
+                                                q.getDocuments().get(0)
+                                                        .getReference()
+                                                        .update("timestamp", Timestamp.now());
+                                            } else {
+                                                Map<String,Object> entry = new HashMap<>();
+                                                entry.put("productId", productId);
+                                                entry.put("timestamp", Timestamp.now());
+                                                hist.add(entry);
+                                            }
+                                        });
+
+                                favoriteIcon.setVisibility(View.VISIBLE);
                                 checkFavoriteState();
                                 favoriteIcon.setOnClickListener(v -> {
                                     if (isFavorite) removeFromFavorites();
