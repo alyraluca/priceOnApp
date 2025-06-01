@@ -120,6 +120,7 @@ public class ProductDetailActivity extends AppCompatActivity {
                 startActivity(new Intent(this, BarcodeScannerActivity.class));
                 return true;
             } else if (id == R.id.navigation_favorites) {
+                startActivity(new Intent(this, FavoritesActivity.class));
                 return true;
             }
             return false;
@@ -174,13 +175,32 @@ public class ProductDetailActivity extends AppCompatActivity {
             if (txt.isEmpty()) {
                 input.setError("Introduce un precio"); return;
             }
-            double np;
-            try { np = Double.parseDouble(txt); }
+
+            double newPrice;
+            try { newPrice = Double.parseDouble(txt); }
             catch(NumberFormatException e){
                 input.setError("Formato inválido"); return;
             }
+            double priceDiference = 0.30;
+
+            if (oldPrice == 0) {
+                input.setError("Precio original inválido (0)");
+                return;
+            }
+
+            double porcentaje = Math.abs(newPrice - oldPrice) / oldPrice;
+            if (porcentaje > priceDiference) {
+                double porcentajeActual = Math.round(porcentaje * 1000) / 10.0;
+                input.setError(
+                        "La variación del " + porcentajeActual + "% respecto al precio actual ("
+                                + String.format(Locale.getDefault(), "%.2f", oldPrice)
+                                + " €) supera el 30%."
+                );
+                return;
+            }
+
             Map<String,Object> data = new HashMap<>();
-            data.put("price", np);
+            data.put("price", newPrice);
             data.put("lastPriceUpdate", Timestamp.now());
 
             db.collection("productSupermarket")

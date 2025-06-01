@@ -147,52 +147,168 @@ public class AddProductActivity extends AppCompatActivity {
     }
 
     private void saveProduct() {
-        String brandId = brandsList.get(spinnerBrand.getSelectedItemPosition()).getId();
-        String typeId  = typesList .get(spinnerType .getSelectedItemPosition()).getId();
-        String supId   = supermarketList.get(spinnerSupermarket.getSelectedItemPosition()).getId();
+        String barCodeValue = etBarCode.getText().toString().trim();
+        if (barCodeValue.isEmpty()) {
+            barCodeInputLayout.setError("Introduce un código de barras");
+            return;
+        } else {
+            barCodeInputLayout.setError(null);
+        }
 
-        Map<String,Object> prod = new HashMap<>();
-        prod.put("barCode",       etBarCode.getText().toString().trim());
-        prod.put("name",          etName   .getText().toString().trim());
-        prod.put("brandId",       brandId);
-        prod.put("productType",   typeId);
-        prod.put("quantityPack",  Double.parseDouble(etQtyPack.getText().toString().trim()));
-        prod.put("quantityUnity", Double.parseDouble(etQtyUnity.getText().toString().trim()));
-        prod.put("unit",          etUnit   .getText().toString().trim());
-        String url = photoUrlEditText.getText().toString().trim();
-        prod.put("photoUrl", url);
+        String nameValue = etName.getText().toString().trim();
+        if (nameValue.isEmpty()) {
+            productNameInputLayout.setError("Introduce el nombre del producto");
+            return;
+        } else {
+            productNameInputLayout.setError(null);
+        }
+
+        String qtyPackStr = etQtyPack.getText().toString().trim();
+        double qtyPackValue;
+        if (qtyPackStr.isEmpty()) {
+            packQuantityInputLayout.setError("Introduce la cantidad en pack");
+            return;
+        }
+        try {
+            qtyPackValue = Double.parseDouble(qtyPackStr);
+            if (qtyPackValue <= 0) {
+                packQuantityInputLayout.setError("Debe ser un número mayor que 0");
+                return;
+            } else {
+                packQuantityInputLayout.setError(null);
+            }
+        } catch (NumberFormatException e) {
+            packQuantityInputLayout.setError("Formato inválido");
+            return;
+        }
+
+        String qtyUnityStr = etQtyUnity.getText().toString().trim();
+        double qtyUnityValue;
+        if (qtyUnityStr.isEmpty()) {
+            unityQuantityInputLayout.setError("Introduce la cantidad en unidad");
+            return;
+        }
+        try {
+            qtyUnityValue = Double.parseDouble(qtyUnityStr);
+            if (qtyUnityValue < 0) {
+                unityQuantityInputLayout.setError("Debe ser un número igual o mayor que 0");
+                return;
+            } else {
+                unityQuantityInputLayout.setError(null);
+            }
+        } catch (NumberFormatException e) {
+            unityQuantityInputLayout.setError("Formato inválido");
+            return;
+        }
+
+        String unitValue = etUnit.getText().toString().trim();
+        if (unitValue.isEmpty()) {
+            unitInputLayout.setError("Introduce la unidad (ej. kg, L, uds)");
+            return;
+        } else {
+            unitInputLayout.setError(null);
+        }
+
+        String initPriceStr = etInitialPrice.getText().toString().trim();
+        double initPriceValue;
+        if (initPriceStr.isEmpty()) {
+            initialPriceInputLayout.setError("Introduce el precio inicial");
+            return;
+        }
+        try {
+            initPriceValue = Double.parseDouble(initPriceStr);
+            if (initPriceValue <= 0) {
+                initialPriceInputLayout.setError("Debe ser un número mayor que 0");
+                return;
+            } else {
+                initialPriceInputLayout.setError(null);
+            }
+        } catch (NumberFormatException e) {
+            initialPriceInputLayout.setError("Formato inválido");
+            return;
+        }
+
+        String photoUrlValue = photoUrlEditText.getText().toString().trim();
+        if (photoUrlValue.isEmpty()) {
+            photoUrlInputLayout.setError("Introduce la URL de la foto");
+            return;
+        } else {
+            photoUrlInputLayout.setError(null);
+        }
+
+        barCodeInputLayout.setError(null);
+        productNameInputLayout.setError(null);
+        packQuantityInputLayout.setError(null);
+        unityQuantityInputLayout.setError(null);
+        unitInputLayout.setError(null);
+        initialPriceInputLayout.setError(null);
+        photoUrlInputLayout.setError(null);
+
+        if (barCodeValue.isEmpty()) {
+            barCodeInputLayout.setError("Introduce un código de barras");
+            return;
+        }
+        barCodeInputLayout.setError(null);
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         db.collection("products")
-                .add(prod)
-                .addOnSuccessListener(docRef -> {
-                    String newProdId = docRef.getId();
-                    Map<String,Object> rel = new HashMap<>();
-                    rel.put("productId",     newProdId);
-                    rel.put("supermarketId", supId);
-                    db.collection("productSupermarket")
-                            .add(rel)
-                            .addOnSuccessListener(psRef -> {
-                                Map<String,Object> upd = new HashMap<>();
-                                upd.put("price",          Double.parseDouble(etInitialPrice.getText().toString().trim()));
-                                upd.put("lastPriceUpdate", Timestamp.now());
-                                psRef.collection("priceUpdate")
-                                        .add(upd)
-                                        .addOnSuccessListener(r -> {
-                                            Toast.makeText(this, "Producto creado con éxito", Toast.LENGTH_SHORT).show();
-                                            finish();
+                .whereEqualTo("barCode", barCodeValue)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!querySnapshot.isEmpty()) {
+
+                        barCodeInputLayout.setError("Ya existe un producto con este código de barras");
+                        return;
+                    }
+                    String brandId = brandsList.get(spinnerBrand.getSelectedItemPosition()).getId();
+                    String typeId  = typesList .get(spinnerType .getSelectedItemPosition()).getId();
+                    String supermarketId   = supermarketList.get(spinnerSupermarket.getSelectedItemPosition()).getId();
+
+                    Map<String,Object> prod = new HashMap<>();
+                    prod.put("barCode",       barCodeValue);
+                    prod.put("name",          etName   .getText().toString().trim());
+                    prod.put("brandId",       brandId);
+                    prod.put("productType",   typeId);
+                    prod.put("quantityPack",  Double.parseDouble(etQtyPack.getText().toString().trim()));
+                    prod.put("quantityUnity", Double.parseDouble(etQtyUnity.getText().toString().trim()));
+                    prod.put("unit",          etUnit   .getText().toString().trim());
+                    String url = photoUrlEditText.getText().toString().trim();
+                    prod.put("photoUrl", url);
+
+                    db.collection("products")
+                            .add(prod)
+                            .addOnSuccessListener(docRef -> {
+                                String newProdId = docRef.getId();
+                                Map<String,Object> rel = new HashMap<>();
+                                rel.put("productId",     newProdId);
+                                rel.put("supermarketId", supermarketId);
+                                db.collection("productSupermarket")
+                                        .add(rel)
+                                        .addOnSuccessListener(psRef -> {
+                                            Map<String,Object> upd = new HashMap<>();
+                                            upd.put("price",          Double.parseDouble(etInitialPrice.getText().toString().trim()));
+                                            upd.put("lastPriceUpdate", Timestamp.now());
+                                            psRef.collection("priceUpdate")
+                                                    .add(upd)
+                                                    .addOnSuccessListener(r -> {
+                                                        Toast.makeText(this, "Producto creado con éxito", Toast.LENGTH_SHORT).show();
+                                                        finish();
+                                                    })
+                                                    .addOnFailureListener(e ->
+                                                            Toast.makeText(this, "Error al guardar precio inicial", Toast.LENGTH_SHORT).show()
+                                                    );
                                         })
                                         .addOnFailureListener(e ->
-                                                Toast.makeText(this, "Error al guardar precio inicial", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(this, "Error al crear relación supermercado", Toast.LENGTH_SHORT).show()
                                         );
                             })
                             .addOnFailureListener(e ->
-                                    Toast.makeText(this, "Error al crear relación supermercado", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(this, "Error al guardar producto", Toast.LENGTH_SHORT).show()
                             );
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Error al guardar producto", Toast.LENGTH_SHORT).show()
-                );
+                });
     }
+
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();

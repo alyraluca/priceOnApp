@@ -6,12 +6,14 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
@@ -26,6 +28,7 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -38,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class ProductDetailFromBarcodeActivity extends AppCompatActivity {
@@ -48,7 +52,7 @@ public class ProductDetailFromBarcodeActivity extends AppCompatActivity {
     private BottomNavigationView bottomNavigationView;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private Product product;
-    private String uid, productId;
+    private String uid, productId, role;
     private boolean isFavorite = false;
 
     @Override
@@ -91,10 +95,50 @@ public class ProductDetailFromBarcodeActivity extends AppCompatActivity {
 
         MaterialToolbar topAppBar = findViewById(R.id.topAppBar);
         setSupportActionBar(topAppBar);
+        topAppBar.inflateMenu(R.menu.top_app_bar_menu);
+        topAppBar.setOnMenuItemClickListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.action_add) {
+                if (uid == null) {
+                    Toast.makeText(this, "Necesitas estar logueado", Toast.LENGTH_SHORT).show();
+                } else {
+                    db.collection("users")
+                            .document(uid)
+                            .get()
+                            .addOnSuccessListener(doc -> {
+                                String role = doc.getString("role");
+                                if ("admin".equals(role)) {
+                                    Toast.makeText(this, "Aquí podrías abrir AddProduct", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    Toast.makeText(this,
+                                            "Necesitas ser administrador para añadir productos",
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                }
+                return true;
+            }
+            return false;
+        });
+
 
         String barcode = getIntent().getStringExtra("barcode");
         if (barcode != null) {
-            searchProductByBarcode(barcode);
+            if (uid != null) {
+                db.collection("users").document(uid)
+                        .get()
+                        .addOnSuccessListener(doc -> {
+                            role = doc.getString("role");
+                            searchProductByBarcode(barcode);
+                        })
+                        .addOnFailureListener(e -> {
+                            role = null; // o default
+                            searchProductByBarcode(barcode);
+                        });
+            } else {
+                role = null;
+                searchProductByBarcode(barcode);
+            }
         } else {
             Toast.makeText(this, "No se recibió código de barras", Toast.LENGTH_LONG).show();
             finish();
@@ -237,7 +281,7 @@ public class ProductDetailFromBarcodeActivity extends AppCompatActivity {
         supermarketListContainer.removeAllViews();
 
         db.collection("productSupermarket")
-                .whereEqualTo("productId", product.getId())
+                .whereEqualTo("productId", productId)
                 .get()
                 .addOnSuccessListener(superDocs -> {
                     if (superDocs.isEmpty()) {
@@ -245,86 +289,99 @@ public class ProductDetailFromBarcodeActivity extends AppCompatActivity {
                         return;
                     }
 
-                    final double[] minPrice = {Double.MAX_VALUE};
+                    final double[] minPrice = { Double.MAX_VALUE };
                     final int total = superDocs.size();
-                    final int[] processed = {0};
+                    final int[] processed = { 0 };
 
                     for (DocumentSnapshot doc : superDocs) {
+                        String psDocId       = doc.getId();
                         String supermarketId = doc.getString("supermarketId");
 
                         db.collection("supermarkets").document(supermarketId).get()
                                 .addOnSuccessListener(supermarketDoc -> {
-                                    if (supermarketDoc.exists()) {
-                                        String supermarketName = supermarketDoc.getString("name");
-
-                                        db.collection("productSupermarket").document(doc.getId())
-                                                .collection("priceUpdate")
-                                                .orderBy("lastPriceUpdate", Query.Direction.DESCENDING)
-                                                .limit(1)
-                                                .get()
-                                                .addOnSuccessListener(priceDocs -> {
-                                                    processed[0]++;
-
-                                                    if (!priceDocs.isEmpty()) {
-                                                        DocumentSnapshot priceDoc = priceDocs.getDocuments().get(0);
-                                                        Double price = priceDoc.getDouble("price");
-
-                                                        if (price != null && price < minPrice[0]) {
-                                                            minPrice[0] = price;
-                                                        }
-
-                                                        View item = LayoutInflater.from(this)
-                                                                .inflate(R.layout.item_supermarket_info, supermarketListContainer, false);
-
-                                                        ImageView logo = item.findViewById(R.id.supermarketLogo);
-                                                        TextView name = item.findViewById(R.id.supermarketName);
-                                                        TextView priceText = item.findViewById(R.id.supermarketPrice);
-                                                        TextView unitPriceText = item.findViewById(R.id.supermarketUnitPrice);
-
-                                                        name.setText(supermarketName);
-                                                        priceText.setText(String.format("%.2f €", price));
-
-                                                        double quantityUnity = product.getQuantityUnity();
-                                                        String unit = product.getUnit() != null ? product.getUnit() : "";
-
-                                                        if (quantityUnity > 0 && price != null) {
-                                                            double unitPrice = price / quantityUnity;
-                                                            unitPriceText.setText(String.format("%.2f € / %s", unitPrice, unit));
-                                                        } else {
-                                                            unitPriceText.setText("N/A");
-                                                        }
-
-                                                        if ("Mercadona".equalsIgnoreCase(supermarketName)) {
-                                                            logo.setImageResource(R.drawable.mercadona);
-                                                        } else if ("Dia".equalsIgnoreCase(supermarketName)) {
-                                                            logo.setImageResource(R.drawable.dia_logo);
-                                                        } else {
-                                                            logo.setImageResource(R.drawable.alcampo);
-                                                        }
-
-                                                        supermarketListContainer.addView(item);
-                                                    }
-
-                                                    // Solo actualizar el precio mínimo una vez todos estén procesados
-                                                    if (processed[0] == total) {
-                                                        if (minPrice[0] != Double.MAX_VALUE) {
-                                                            minPriceLabel.setText(String.format("%.2f €", minPrice[0]));
-                                                        } else {
-                                                            minPriceLabel.setText("Precio no disponible");
-                                                        }
-                                                    }
-                                                });
-                                    } else {
+                                    if (!supermarketDoc.exists()) {
                                         processed[0]++;
-                                        if (processed[0] == total && minPrice[0] == Double.MAX_VALUE) {
-                                            minPriceLabel.setText("Precio no disponible");
-                                        }
+                                        return;
                                     }
+
+                                    String supermarketName = supermarketDoc.getString("name");
+
+                                    db.collection("productSupermarket")
+                                            .document(psDocId)
+                                            .collection("priceUpdate")
+                                            .orderBy("lastPriceUpdate", Query.Direction.DESCENDING)
+                                            .limit(1)
+                                            .get()
+                                            .addOnSuccessListener(priceDocs -> {
+                                                processed[0]++;
+
+                                                double price = priceDocs.isEmpty()
+                                                        ? Double.MAX_VALUE
+                                                        : priceDocs.getDocuments().get(0).getDouble("price");
+
+                                                if (price < minPrice[0]) {
+                                                    minPrice[0] = price;
+                                                }
+
+                                                View item = LayoutInflater.from(this)
+                                                        .inflate(R.layout.item_supermarket_info, supermarketListContainer, false);
+
+                                                ImageView logo       = item.findViewById(R.id.supermarketLogo);
+                                                TextView  nameTv     = item.findViewById(R.id.supermarketName);
+                                                TextView  priceTv    = item.findViewById(R.id.supermarketPrice);
+                                                TextView  unitPriceTv= item.findViewById(R.id.supermarketUnitPrice);
+                                                ImageView btnEdit    = item.findViewById(R.id.btnUpdateSuperPrice);
+
+                                                nameTv.setText(supermarketName);
+                                                priceTv.setText(price < Double.MAX_VALUE
+                                                        ? String.format(Locale.getDefault(), "%.2f €", price)
+                                                        : "N/A");
+
+                                                double qty = product.getQuantityUnity();
+                                                String unit = product.getUnit() != null ? product.getUnit() : "";
+                                                unitPriceTv.setText(qty > 0 && price < Double.MAX_VALUE
+                                                        ? String.format(Locale.getDefault(),"%.2f € / %s", price/qty, unit)
+                                                        : "N/A");
+
+                                                if ("Mercadona".equalsIgnoreCase(supermarketName))      logo.setImageResource(R.drawable.mercadona);
+                                                else if ("Dia".equalsIgnoreCase(supermarketName))      logo.setImageResource(R.drawable.dia_logo);
+                                                else                                                    logo.setImageResource(R.drawable.alcampo);
+
+                                                btnEdit.setVisibility(View.VISIBLE);
+                                                btnEdit.setEnabled(false);
+                                                btnEdit.setAlpha(0.4f);
+
+                                                if ("admin".equals(role) || "mod".equals(role)) {
+                                                    btnEdit.setEnabled(true);
+                                                    btnEdit.setAlpha(1f);
+                                                    btnEdit.setOnClickListener(v ->
+                                                            showCustomUpdateDialog(supermarketName, psDocId, price)
+                                                    );
+                                                } else {
+                                                    btnEdit.setOnClickListener(v ->
+                                                            Toast.makeText(this,
+                                                                    "Necesitas permisos para actualizar precio",
+                                                                    Toast.LENGTH_SHORT
+                                                            ).show()
+                                                    );
+                                                }
+
+                                                supermarketListContainer.addView(item);
+
+                                                if (processed[0] == total) {
+                                                    if (minPrice[0] != Double.MAX_VALUE) {
+                                                        minPriceLabel.setText(
+                                                                String.format(Locale.getDefault(), "%.2f €", minPrice[0])
+                                                        );
+                                                    } else {
+                                                        minPriceLabel.setText("Precio no disponible");
+                                                    }
+                                                }
+                                            });
                                 });
                     }
                 });
     }
-
 
     private void loadPriceEvolution() {
         Map<Long, List<Double>> pricesByDate = new HashMap<>();
@@ -486,4 +543,78 @@ public class ProductDetailFromBarcodeActivity extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.top_app_bar_menu, menu);
         return true;
     }
+
+    private void showCustomUpdateDialog(
+            String supermarketName,
+            String psDocId,
+            double oldPrice
+    ) {
+        View custom = LayoutInflater.from(this)
+                .inflate(R.layout.dialog_update_price, null, false);
+
+        TextView title         = custom.findViewById(R.id.dialogTitle);
+        TextInputEditText input= custom.findViewById(R.id.etNewPrice);
+        Button btnSave         = custom.findViewById(R.id.btnSave);
+        Button btnCancel       = custom.findViewById(R.id.btnCancel);
+
+        title.setText("Super: " + supermarketName);
+        input.setText(String.format(Locale.getDefault(),"%.2f", oldPrice));
+
+        AlertDialog dlg = new AlertDialog.Builder(this)
+                .setView(custom)
+                .create();
+
+        btnCancel.setOnClickListener(v -> dlg.dismiss());
+        btnSave  .setOnClickListener(v -> {
+            String txt = input.getText().toString().trim();
+            if (txt.isEmpty()) {
+                input.setError("Introduce un precio"); return;
+            }
+            double newPrice;
+            try { newPrice = Double.parseDouble(txt); }
+            catch(NumberFormatException e){
+                input.setError("Formato inválido"); return;
+            }
+            double priceDiference = 0.30;
+
+            if (oldPrice == 0) {
+                input.setError("Precio original inválido (0)");
+                return;
+            }
+
+            double porcentaje = Math.abs(newPrice - oldPrice) / oldPrice;
+            if (porcentaje > priceDiference) {
+                double porcentajeActual = Math.round(porcentaje * 1000) / 10.0;
+                input.setError(
+                        "La variación del " + porcentajeActual + "% respecto al precio actual ("
+                                + String.format(Locale.getDefault(), "%.2f", oldPrice)
+                                + " €) supera el 30%."
+                );
+                return;
+            }
+            Map<String,Object> data = new HashMap<>();
+            data.put("price", newPrice);
+            data.put("lastPriceUpdate", Timestamp.now());
+
+            db.collection("productSupermarket")
+                    .document(psDocId)
+                    .collection("priceUpdate")
+                    .add(data)
+                    .addOnSuccessListener(r -> {
+                        Toast.makeText(this,
+                                "Precio actualizado", Toast.LENGTH_SHORT
+                        ).show();
+                        dlg.dismiss();
+                        loadSupermarkets();
+                    })
+                    .addOnFailureListener(e ->
+                            Toast.makeText(this,
+                                    "Error al actualizar", Toast.LENGTH_SHORT
+                            ).show()
+                    );
+        });
+
+        dlg.show();
+    }
+
 }
