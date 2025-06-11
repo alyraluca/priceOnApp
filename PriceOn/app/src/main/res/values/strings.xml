@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">PriceOn</string>
+    <string name="log_in">Iniciar sesión</string>
+    <string name="register">Registrarse</string>
+    <string name="enter_without_registering">Usar sin registrarse</string>
+    <string name="app_logo">App Logo</string>
+    <string name="create_account">Crear cuenta</string>
+    <string name="name">Nombre</string>
+    <string name="email">Correo electrónico</string>
+    <string name="password">Contraseña</string>
+    <string name="repeat_password">Repetir contraseña</string>
+    <string name="already_have_account">¿Ya tienes cuenta? Inicia sesión</string>
+    <string name="dont_have_account_register">¿No tienes cuenta? Regístrate</string>
+    <string name="search_product_hint">Buscar producto</string>
+    <string name="search_history">Historial de búsqueda</string>
+    <string name="supermarkets_title">Supermercados</string>
+    <string name="supermarket_icon_description">Supermarket logo</string>
+    <string name="product_image_description">Place holder product name</string>
+</resources>
