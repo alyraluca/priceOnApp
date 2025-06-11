@@ -46,7 +46,6 @@
 
             </FrameLayout>
 
-            <!-- Nombre y corazón en la misma fila -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

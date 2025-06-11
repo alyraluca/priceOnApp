@@ -112,7 +112,6 @@ public class ProfileActivity extends AppCompatActivity {
                 editEmail.setText(originalEmail);
                 editRole.setText(role != null ? role : "user");
             } else {
-                // No existe usuario en Firestore → cerrar sesión y redirigir
                 FirebaseAuth.getInstance().signOut();
                 Intent intent = new Intent(ProfileActivity.this, MainActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

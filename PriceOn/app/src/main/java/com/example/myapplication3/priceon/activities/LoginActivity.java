@@ -21,7 +21,6 @@ public class LoginActivity extends AppCompatActivity {
     private Button loginButton;
     private TextView registerLinkTextView;
     private TextView guestLoginTextView;
-    //Instanciamos FirebaseAuth
     private FirebaseAuth firebaseAuth;
 
     @Override
@@ -37,15 +36,12 @@ public class LoginActivity extends AppCompatActivity {
         registerLinkTextView = findViewById(R.id.registerLinkTextView);
         guestLoginTextView = findViewById(R.id.guestLoginTextView);
 
-        //Botón de log in
         loginButton.setOnClickListener(v -> loginUser());
 
-        //Link para redirigir a 'registro'
         registerLinkTextView.setOnClickListener(v -> {
             startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
             finish();
         });
-        //Link para redirigir a 'home' a los invitados
         guestLoginTextView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -62,10 +58,9 @@ public class LoginActivity extends AppCompatActivity {
 
         if (TextUtils.isEmpty(email) || TextUtils.isEmpty(password)) {
             Toast.makeText(this, "Introduce email y contraseña", Toast.LENGTH_SHORT).show();
-            return; // Salimos de la función si no hay datos
+            return;
         }
 
-        //Iniciamos sesión con el método más común y simple de Firebase
         firebaseAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {

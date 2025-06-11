@@ -4,7 +4,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Top App Bar -->
     <include
         android:id="@+id/topAppBar"
         layout="@layout/top_app_bar"
@@ -14,7 +13,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Scrollable content -->
     <ScrollView
         android:id="@+id/scrollView"
         android:layout_width="0dp"
@@ -30,7 +28,6 @@
             android:layout_height="wrap_content"
             android:padding="16dp">
 
-            <!-- Nombre -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilName"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
@@ -46,7 +43,6 @@
                     android:layout_height="wrap_content"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Correo -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilEmail"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
@@ -64,7 +60,6 @@
                     android:layout_height="wrap_content"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Rol (solo lectura) -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilRole"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
@@ -84,7 +79,6 @@
                     android:layout_height="wrap_content"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Botones -->
             <Button
                 android:id="@+id/saveButton"
                 style="@style/Widget.MaterialComponents.Button"
@@ -113,7 +107,6 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
 
-    <!-- Bottom Navigation -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigationBar"
         android:layout_width="0dp"

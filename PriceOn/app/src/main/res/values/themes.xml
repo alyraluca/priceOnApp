@@ -1,5 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+
     <style name="Base.Theme.PriceOn" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/my_light_primary</item>
         <item name="colorOnPrimary">@color/white</item>
@@ -8,19 +8,12 @@
         <item name="colorOnSecondary">@color/black</item>
         <item name="colorSecondaryVariant">@color/my_light_secondary_variant</item> <!-- Or colorAccent for Material 1 -->
         <item name="customPriceColor">@color/my_light_primary</item>
-
-        <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
-        <!-- Customize your theme here. -->
         <item name="colorSurface">@color/my_light_surface</item>
         <item name="colorOnSurface">@color/my_light_on_surface</item>
         <item name="bottomNavigationStyle">@style/Widget.App.BottomNavigationView</item>
-
-        <!-- 2) FUENTE global: -->
         <item name="android:fontFamily">@font/roboto_regular</item>
-        <!-- opcionalmente, para los componentes de Material2: -->
         <item name="fontFamily">@font/roboto_regular</item>
-
     </style>
 
     <style name="Theme.PriceOn" parent="Base.Theme.PriceOn" />

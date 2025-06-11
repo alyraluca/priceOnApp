@@ -45,10 +45,8 @@ public class RegisterActivity extends AppCompatActivity {
         setContentView(R.layout.activity_register);
         firestore = FirebaseFirestore.getInstance();
 
-        //Iniciar Firebase Auth
         firebaseAuth = FirebaseAuth.getInstance();
 
-        //Referenciamos los campos
         nameEditText = findViewById(R.id.nameEditText);
         emailEditText = findViewById(R.id.emailEditText);
         passwordEditText = findViewById(R.id.passwordEditText);
@@ -57,15 +55,12 @@ public class RegisterActivity extends AppCompatActivity {
         loginLinkTextView = findViewById(R.id.loginLinkTextView);
         guestLoginTextView = findViewById(R.id.guestLoginTextView);
 
-        //Botón registrarse
         registerButton.setOnClickListener(v -> registerUser());
 
-        //Link para redirigir a login
         loginLinkTextView.setOnClickListener(v -> {
             startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
             finish();
         });
-        //Link para redirigir a home a los invitados
         guestLoginTextView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -96,7 +91,6 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-        //Creamos usuario en Firebase Auth
         firebaseAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
@@ -140,7 +134,6 @@ public class RegisterActivity extends AppCompatActivity {
                             LOCATION_PERMISSION_REQUEST_CODE);
                 })
                 .setNegativeButton("No", (dialog, which) -> {
-                    // Guardamos sin ubicación
                     saveUserToFirestore(pendingUid, pendingName, pendingEmail);
                 })
                 .setCancelable(false)

@@ -19,6 +19,5 @@ dependencyResolutionManagement {
         maven { url 'https://jitpack.io' }
     }
 }
-
 rootProject.name = "PriceOn"
 include ':app'

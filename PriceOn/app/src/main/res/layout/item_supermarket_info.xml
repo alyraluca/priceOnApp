@@ -44,7 +44,6 @@
             android:textSize="14sp" />
     </LinearLayout>
 
-    <!-- Ahora un ImageView clicable en lugar de ImageButton -->
     <ImageView
         android:id="@+id/btnUpdateSuperPrice"
         android:layout_width="24dp"

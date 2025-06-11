@@ -83,8 +83,6 @@
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="12dp"/>
 
-            <!-- Contenedor de "Desde" + precio + botón editar -->
-            <!-- Contenedor de "Desde" y precio en vertical -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

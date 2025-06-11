@@ -152,7 +152,6 @@
                     android:layout_height="wrap_content"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Unidad -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilUnit"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
@@ -169,34 +168,40 @@
                     android:layout_height="wrap_content"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Supermercado -->
             <TextView
                 android:id="@+id/labelSuper"
                 style="@style/TextAppearance.App.Headline"
-                android:text="Supermercado"
+                android:text="Supermercados"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:layout_constraintTop_toBottomOf="@id/tilUnit"
                 app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginTop="24dp"/>
 
-            <Spinner
-                android:id="@+id/spinnerSupermarket"
+            <TextView
+                android:id="@+id/tvSelectSupermarkets"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:hint="Selecciona supermercados"
+                android:padding="12dp"
+                android:background="?attr/selectableItemBackground"
+                android:focusable="true"
+                android:clickable="true"
+                android:drawableEnd="@drawable/ic_arrow_drop_down"
+                android:drawableRight="@drawable/ic_arrow_drop_down"
+                android:drawablePadding="8dp"
+                android:layout_marginTop="8dp"
                 app:layout_constraintTop_toBottomOf="@id/labelSuper"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:layout_marginTop="8dp"/>
+                app:layout_constraintEnd_toEndOf="parent"/>
 
-            <!-- Precio inicial -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilInitPrice"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
                 android:hint="Precio inicial"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/spinnerSupermarket"
+                app:layout_constraintTop_toBottomOf="@id/tvSelectSupermarkets"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 android:layout_marginTop="16dp">
@@ -207,7 +212,6 @@
                     android:layout_height="wrap_content"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Botón guardar -->
             <Button
                 android:id="@+id/btnSaveProduct"
                 style="@style/Widget.MaterialComponents.Button"
@@ -222,7 +226,6 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
 
-    <!-- Bottom nav -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigationBar"
         android:layout_width="0dp"

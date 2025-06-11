@@ -7,20 +7,18 @@
     card_view:cardCornerRadius="12dp"
     card_view:cardElevation="8dp">
 
-    <!-- Contenedor horizontal principal -->
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:padding="12dp">
 
-        <!-- Columna izquierda: imagen + logos -->
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="horizontal">
 
-            <!-- Imagen del producto -->
             <ImageView
                 android:id="@+id/productImage"
                 android:layout_width="60dp"
@@ -28,72 +26,67 @@
                 android:scaleType="centerCrop"
                 android:layout_marginEnd="8dp"/>
 
-            <!-- Logos debajo de la imagen -->
             <LinearLayout
-                android:id="@+id/supermarketLogoContainer"
+                android:id="@+id/productInfoContainer"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/productName"
+                    style="@style/TextAppearance.App.ProductTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:id="@+id/productBrand"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="14sp"/>
+            </LinearLayout>
+
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="8dp"/>
+                android:orientation="vertical"
+                android:gravity="center_vertical|end">
+
+                <TextView
+                    android:id="@+id/productPrice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/customPriceColor"
+                    android:textStyle="bold"
+                    android:textSize="16sp"/>
+
+                <TextView
+                    android:id="@+id/productPricePerUnit"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/darker_gray"
+                    android:layout_marginTop="4dp"/>
+
+                <TextView
+                    android:id="@+id/productQuantity"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/darker_gray"
+                    android:layout_marginTop="2dp"/>
+            </LinearLayout>
+
         </LinearLayout>
 
-        <!-- Espacio entre la columna izquierda y el centro -->
-        <View
-            android:layout_width="8dp"
-            android:layout_height="match_parent"/>
-
-        <!-- Contenedor central: nombre y marca -->
         <LinearLayout
-            android:id="@+id/productInfoContainer"
-            android:layout_width="0dp"
+            android:id="@+id/supermarketLogoContainer"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/productName"
-                style="@style/TextAppearance.App.ProductTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textStyle="bold"/>
-
-            <TextView
-                android:id="@+id/productBrand"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="14sp"/>
-        </LinearLayout>
-
-        <!-- Contenedor derecho: precio y cantidad -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:gravity="end">
-
-            <TextView
-                android:id="@+id/productPrice"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="?attr/customPriceColor"
-                android:textStyle="bold"
-                android:textSize="16sp"/>
-
-            <TextView
-                android:id="@+id/productPricePerUnit"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="14sp"
-                android:textColor="@android:color/darker_gray"
-                android:layout_marginTop="4dp"/>
-
-            <TextView
-                android:id="@+id/productQuantity"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="14sp"
-                android:textColor="@android:color/darker_gray"
-                android:layout_marginTop="2dp"/>
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp"
+            android:gravity="start">
         </LinearLayout>
 
     </LinearLayout>

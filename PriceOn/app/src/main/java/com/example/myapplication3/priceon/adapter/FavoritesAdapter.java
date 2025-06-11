@@ -44,7 +44,6 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
     public void onBindViewHolder(@NonNull FavoritesAdapter.ViewHolder holder, int position) {
         Product product = items.get(position);
 
-        // Carga de datos básicos
         holder.name.setText(product.getName());
         holder.brand.setText(product.getBrandName());
         holder.price.setText(String.format("%.2f €", product.getMinPrice()));
@@ -53,7 +52,6 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
                 .placeholder(R.drawable.ic_launcher_background)
                 .into(holder.image);
 
-        // Al pulsar la tarjeta, abrimos detalle
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, ProductDetailActivity.class);
             intent.putExtra("product", product);

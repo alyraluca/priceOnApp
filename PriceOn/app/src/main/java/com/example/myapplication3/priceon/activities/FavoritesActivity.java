@@ -206,7 +206,6 @@ public class FavoritesActivity extends AppCompatActivity {
                                             product.setMinPrice(price);
                                         }
                                     }
-                                    // Cargamos logo del supermercado
                                     db.collection("supermarkets")
                                             .document(supId)
                                             .get()
